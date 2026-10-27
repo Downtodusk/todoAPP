@@ -25,6 +25,7 @@ import com.example.todo.data.settings.UserSettings
 import com.example.todo.ui.add.*
 import com.example.todo.ui.ai.*
 import com.example.todo.SharedNotice
+import com.example.todo.domain.calendarDate
 import kotlinx.coroutines.flow.first
 import com.example.todo.ui.components.*
 import com.example.todo.ui.theme.*
@@ -147,32 +148,40 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 val editor: AddViewModel = viewModel(factory = viewModelFactory { initializer { AddViewModel(container.todos, id, snapshots[id], snapshots.containsKey(id)) } })
                 val edit by editor.state.collectAsStateWithLifecycle()
                 LaunchedEffect(edit.saved) { if (edit.saved) { if (edit.savedWithReminder) permissionRequest++; nav.popBackStack() } }
-                Scaffold(modifier = Modifier.todoSharedBounds(id), topBar = { TopAppBar(title = { Text("待办详情") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } },
-                    actions = {
-                        TextButton(onClick = { scope.launch {
-                            try { container.todos.copy(id)?.let { snackbar.showSnackbar("已复制") } }
-                            catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                            catch (_: Exception) { snackbar.showSnackbar("复制失败，请重试") }
-                        } }) { Text("复制") }
-                        IconButton(onClick = { nav.popBackStack(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } }) { Icon(LineIcons.Delete, "删除") }
+                var detailMenu by remember { mutableStateOf(false) }
+                Scaffold(modifier = Modifier.todoSharedBounds(id), topBar = { CenterAlignedTopAppBar(title = { Text("待办详情", style = MaterialTheme.typography.titleLarge) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface), actions = {
+                        Box {
+                            IconButton(onClick = { detailMenu = true }) { Icon(LineIcons.More, "待办操作") }
+                            DropdownMenu(expanded = detailMenu, onDismissRequest = { detailMenu = false }) {
+                                DropdownMenuItem(text = { Text("复制") }, onClick = { detailMenu = false; scope.launch {
+                                    try { container.todos.copy(id)?.let { snackbar.showSnackbar("已复制") } }
+                                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                                    catch (_: Exception) { snackbar.showSnackbar("复制失败，请重试") }
+                                } })
+                                DropdownMenuItem(text = { Text("删除") }, onClick = { detailMenu = false; nav.popBackStack(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } })
+                                if (edit.snapshot?.todo?.status == 0) {
+                                    HorizontalDivider()
+                                    listOf("推迟10分钟" to 600_000L, "推迟1小时" to 3_600_000L, "推迟到明天此时" to -1L).forEach { (label, duration) ->
+                                        DropdownMenuItem(text = { Text(label) }, onClick = { detailMenu = false; scope.launch {
+                                            try {
+                                                val trigger = if (duration < 0) ZonedDateTime.now().plusDays(1).toInstant().toEpochMilli() else System.currentTimeMillis() + duration
+                                                if (container.todos.snooze(id, trigger)) { permissionRequest++; nav.popBackStack(); snackbar.showSnackbar("已推迟提醒") }
+                                            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                                            catch (_: Exception) { snackbar.showSnackbar("推迟失败，请重试") }
+                                        } })
+                                    }
+                                }
+                            }
+                        }
                     }) }) { padding ->
                     when {
                         edit.loading -> NoticeSkeleton(Modifier.padding(padding).padding(20.dp))
                         edit.missing -> Text(edit.error ?: "待办已删除", Modifier.padding(padding).padding(20.dp))
                         else -> Column(Modifier.padding(padding)) {
-                            if (edit.snapshot?.todo?.status == 0) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                                listOf("推迟10分钟" to 600_000L, "1小时" to 3_600_000L, "明天此时" to -1L).forEach { (label, delay) -> TextButton(onClick = {
-                                    scope.launch {
-                                        try {
-                                            val trigger = if (delay < 0) ZonedDateTime.now().plusDays(1).toInstant().toEpochMilli() else System.currentTimeMillis() + delay
-                                            if (container.todos.snooze(id, trigger)) { permissionRequest++; nav.popBackStack(); snackbar.showSnackbar("已推迟提醒") }
-                                        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                                        catch (_: Exception) { snackbar.showSnackbar("推迟失败，请重试") }
-                                    }
-                                }) { Text(label) } }
-                            }
                             TodoEditor(edit.snapshot?.todo, edit.saving, edit.error, editor::save, {},
-                                reminders = edit.snapshot?.reminders.orEmpty(), defaultMinute = settings.allDayMinute)
+                                reminders = edit.snapshot?.reminders.orEmpty(), defaultMinute = settings.allDayMinute,
+                                markedDates = state.todos.filter { it.status == 0 }.mapNotNull { it.calendarDate(zone) }.toSet())
                         }
                     }
                 }

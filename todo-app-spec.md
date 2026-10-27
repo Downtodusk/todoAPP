@@ -40,7 +40,7 @@
 | 密钥存储 | Android Keystore（AES-GCM）加密后存入 DataStore；MUST NOT 明文存储，MUST NOT 写入日志 |
 | minSdk / targetSdk | 26 / 最新稳定 API |
 | 构建 | R8 minify + shrinkResources 开启；包含 Baseline Profile |
-| 字体 | 仅系统字体，MUST NOT 打包字体文件 |
+| 字体 | 按用户后续确认，内置 Source Serif 4 / Source Sans 3 与思源黑体（SIL OFL 1.1）；保留许可证与来源，不使用 Claude 专有字体 |
 | 图标 | 采用用户选定的 I01 极简细线风格；优先用内联 `ImageVector` 保持统一线宽与轮廓，`material-icons-core` 仅在风格一致时复用；MUST NOT 引入 `material-icons-extended` |
 | 依赖原则 | 每新增依赖须说明必要性；优先官方库；在既定技术栈内，依赖取舍优先保证功能、稳定性和体验，不以压缩 APK 体积为首要依据 |
 
@@ -231,7 +231,7 @@ app/src/main/java/com/example/todo/
 - 基础配色参考 U03：暖白背景、炭黑文字、少量低饱和陶土色强调，具体色值写入 `Color.kt`；Android 12+ 默认启用动态取色，设置可关。动态取色和深色模式下保持相同布局、排版层级与细线图标风格
 - 日程以平整行式清单和细分隔线组织，留白适中，减少不必要的卡片包裹和装饰；选中、完成和提醒状态必须清晰可辨
 - 间距基准 8dp；列表项最小高度 56dp；触控目标 ≥ 48dp
-- 文字：系统字体，使用 M3 Typography 层级；标题探索有书卷感的系统衬线字体，正文和交互标签采用清晰的系统无衬线字体；以中文版实际可读性和字号缩放表现为准，不假定生成图包含可直接使用的字体文件
+- 文字：使用 M3 Typography 层级；按用户后续确认，英文标题及清单使用 Source Serif 4，辅助文字使用 Source Sans 3，中文使用思源黑体。字体随 APK 离线提供并保留许可证；Android 8/9 使用思源黑体自带拉丁字形兼容回退。以中文版实际可读性和字号缩放表现为准，不宣称复用 Claude 原版字体。
 - 界面图标采用 I01 的均匀细线、轻圆端点和充足负空间；应用图标沿用 I01 的笔记本与勾选意象，按 Android 图标要求重新制作，不直接裁切风格板
 
 ### 7.2 动效（`Motion.kt` 集中定义常量）

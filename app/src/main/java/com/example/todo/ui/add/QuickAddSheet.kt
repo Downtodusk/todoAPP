@@ -21,12 +21,19 @@ import com.example.todo.AppContainer
 import com.example.todo.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.luminance
+import com.example.todo.domain.calendarDate
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> Unit,
     onSaved: (Boolean) -> Unit, onAi: () -> Unit, initialNote: String = "") {
     val reduced = LocalReducedMotion.current
+    val todos by container.todos.all.collectAsStateWithLifecycle(initialValue = emptyList())
+    val markedDates = remember(todos) { todos.filter { it.status == 0 }.mapNotNull { it.calendarDate(ZoneId.systemDefault()) }.toSet() }
+    val maxHeight = (LocalConfiguration.current.screenHeightDp * .93f).dp
     val scope = rememberCoroutineScope()
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var visible by remember { mutableStateOf(false) }
@@ -44,12 +51,13 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
     LaunchedEffect(Unit) { visible = true }
     LaunchedEffect(edit.saved) { if (edit.saved) { close(); onSaved(edit.savedWithReminder) } }
     val content: @Composable () -> Unit = {
+        ApplySystemBarAppearance(MaterialTheme.colorScheme.surface.luminance() < .5f)
         TodoEditor(null, edit.saving || closing, edit.error, editor::save,
-            { if (!closing) scope.launch { close(); onAi() } }, quick = true, defaultMinute = defaultMinute, initialNote = initialNote)
+            { if (!closing) scope.launch { close(); onAi() } }, quick = true, defaultMinute = defaultMinute, initialNote = initialNote, markedDates = markedDates, modifier = Modifier.heightIn(max = maxHeight))
     }
     val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     if (!reduced) {
-        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, shape = shape) { content() }
+        ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, shape = shape, containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) { content() }
     } else {
         // Material 3 1.4 does not publicly expose sheet motion specs. Keep the same modal
         // editor with an opacity-only presentation instead of reaching into internal APIs.
@@ -61,7 +69,7 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
                 })
                 AnimatedVisibility(visible, modifier = Modifier.align(Alignment.BottomCenter),
                     enter = fadeIn(tween(Motion.DurationShort)), exit = fadeOut(tween(Motion.DurationShort))) {
-                    Surface(Modifier.fillMaxWidth().heightIn(max = 640.dp), shape = shape) { content() }
+                    Surface(Modifier.fillMaxWidth().heightIn(max = maxHeight), shape = shape, color = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) { content() }
                 }
             }
         }

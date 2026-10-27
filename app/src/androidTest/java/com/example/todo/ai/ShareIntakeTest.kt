@@ -2,7 +2,7 @@ package com.example.todo.ai
 
 import android.content.Intent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import com.example.todo.App
 import com.example.todo.MainActivity
 import kotlinx.coroutines.flow.first

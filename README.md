@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前 **0.2.0** 已实现基础待办、提醒、交互、AI 导入，以及日志导出和签名构建。M2 检查点通过了 19 项设备自动测试；新增交互、AI 与性能工具已完成主机构建检查，真机体验和正式验收等待后续反馈。不要将开发包视为已经完成全部验收。
+当前 **0.3.0** 在基础待办、提醒、交互、AI 导入、日志导出和签名构建之上，完成 U03 + I01 的首页与添加／编辑页 UI 对齐，并内置用户确认的开源中英文字体。主机构建及独立模拟器验证记录见 [本轮 UI 说明与实际渲染截图](docs/ui-alignment-0.3.0.md)。真机体验、提醒兼容性和性能仍需后续反馈，不能将开发包视为全部验收通过。
 
 ## 构建
 
@@ -17,7 +17,7 @@ source scripts/android-env.sh
 
 ## 安装开发包
 
-已有此前测试安装时，下载 `dist/todo-0.2.0-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.2.0-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
+已有此前测试安装时，下载 `dist/todo-0.3.0-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.3.0-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
 
 原始 Debug 构建输出：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
 

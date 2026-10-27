@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.ui.components.*
 import com.example.todo.ui.theme.*
+import com.example.todo.domain.calendarDate
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.*
@@ -44,6 +47,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
     val disappear = remember { Animatable(1f) }
     var busy by remember { mutableStateOf(false) }
     val latestStatus by rememberUpdatedState(todo.status)
+    var menu by remember { mutableStateOf(false) }
     var titleLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     LaunchedEffect(todo.revision, todo.status) {
         check.snapTo(if (todo.status == 1) 1f else 0f)
@@ -119,20 +123,29 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
             .semantics { customActions = listOf(
                 CustomAccessibilityAction("删除") { if (!busy) onDelete(todo.id); true },
                 CustomAccessibilityAction(if (todo.status == 1) "重新打开" else "完成") { complete(); true }) }) {
-            Row(Modifier.heightIn(min = 76.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                val outline = MaterialTheme.colorScheme.primary
+            Row(Modifier.heightIn(min = 76.dp).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                val completed = todo.status == 1
+                val dated = todo.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone) }
+                if (dated != null && !todo.allDay && !completed) Column(Modifier.width(48.dp), horizontalAlignment = Alignment.Start) {
+                    Text(dated.format(DateTimeFormatter.ofPattern("HH:mm")), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = LocalEditorialFont.current), color = MaterialTheme.colorScheme.onSurface)
+                    if (todo.calendarDate(zone) != LocalDate.now(zone)) Text(dated.format(DateTimeFormatter.ofPattern("M/d")), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                val outline = MaterialTheme.colorScheme.outline
+                val checkedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                val checkInk = MaterialTheme.colorScheme.surface
                 Canvas(Modifier.size(48.dp).semantics {
                     contentDescription = if (todo.status == 1) "重新打开 ${todo.title}" else "完成 ${todo.title}"
-                }.toggleable(todo.status == 1, enabled = !busy, role = Role.Checkbox, onValueChange = { complete() }).padding(14.dp)) {
-                    drawRoundRect(outline, cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()), style = Stroke(1.5.dp.toPx()))
+                }.toggleable(todo.status == 1, enabled = !busy, role = Role.Checkbox, onValueChange = { complete() }).padding(13.dp)) {
+                    drawCircle(outline, radius = size.minDimension / 2 - 1.dp.toPx(), style = Stroke(1.dp.toPx()))
+                    drawCircle(checkedColor.copy(alpha = check.value), radius = size.minDimension / 2 - 1.dp.toPx())
                     val path = Path().apply { moveTo(size.width * .2f, size.height * .5f); lineTo(size.width * .43f, size.height * .73f); lineTo(size.width * .83f, size.height * .27f) }
                     val measure = PathMeasure().apply { setPath(path, false) }
                     val segment = Path(); measure.getSegment(0f, measure.length * check.value, segment, true)
-                    drawPath(segment, outline, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(segment, checkInk, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
                 }
-                Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                    val textColor = MaterialTheme.colorScheme.onSurface
-                    Text(todo.title, style = MaterialTheme.typography.bodyLarge,
+                Column(Modifier.weight(1f).padding(start = 4.dp, end = 2.dp)) {
+                    val textColor = if (completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                    Text(todo.title, style = MaterialTheme.typography.bodyLarge, color = textColor,
                         onTextLayout = { titleLayout = it }, modifier = Modifier.todoSharedBounds(todo.id, title = true).drawWithContent {
                             drawContent()
                             titleLayout?.let { layout ->
@@ -143,11 +156,24 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
                                 }
                             }
                         })
-                    val time = if (todo.allDay) "${todo.allDayDate} · 全天" else todo.dueAt?.let {
-                        Instant.ofEpochMilli(it).atZone(zone).format(DateTimeFormatter.ofPattern("M月d日 HH:mm"))
-                    } ?: "无时间"
-                    Text(listOfNotNull(time, todo.location?.takeIf(String::isNotBlank), if (todo.repeatRule != null) "重复" else null).joinToString(" · "),
+                    val dateLabel = when {
+                        completed || todo.calendarDate(zone)?.let { it != LocalDate.now(zone) } == true ->
+                            if (todo.allDay) "${todo.allDayDate} · 全天" else dated?.format(DateTimeFormatter.ofPattern("M月d日 HH:mm"))
+                        todo.dueAt == null -> "无时间"
+                        else -> null
+                    }
+                    val detail = listOfNotNull(dateLabel, todo.location?.takeIf(String::isNotBlank), if (todo.repeatRule != null) "重复" else null).joinToString(" · ")
+                    if (detail.isNotEmpty()) Text(detail, modifier = Modifier.padding(top = 3.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                }
+                Box {
+                    IconButton(onClick = { menu = true }, enabled = !busy, modifier = Modifier.size(48.dp)) { Icon(LineIcons.More, "更多操作 ${todo.title}", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(text = { Text("查看详情") }, onClick = { menu = false; onDetail(todo.id) })
+                        DropdownMenuItem(text = { Text(if (completed) "重新打开" else "完成") }, onClick = { menu = false; complete() })
+                        DropdownMenuItem(text = { Text("删除") }, onClick = { menu = false; onDelete(todo.id) })
+                    }
                 }
             }
             HorizontalDivider(thickness = .5.dp)

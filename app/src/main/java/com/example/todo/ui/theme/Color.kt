@@ -2,7 +2,7 @@ package com.example.todo.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val WarmWhite = Color(0xFFFAF7F0)
-val Charcoal = Color(0xFF343330)
-val Terracotta = Color(0xFF995139)
-val WarmLine = Color(0xFFD7CFC4)
+val WarmWhite = Color(0xFFFAF8F2)
+val Charcoal = Color(0xFF30302D)
+val Terracotta = Color(0xFFA8583D)
+val WarmLine = Color(0xFFE5DFD4)

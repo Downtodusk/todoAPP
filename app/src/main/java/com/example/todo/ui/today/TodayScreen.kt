@@ -4,6 +4,10 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -17,6 +21,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.domain.*
 import com.example.todo.ui.components.LineIcons
@@ -27,6 +32,7 @@ import java.time.format.DateTimeFormatter
 fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boolean,
     onDetail: (Long) -> Unit, onComplete: (TodoEntity) -> Job, onDelete: (Long) -> Job, onAdd: () -> Unit,
     onAll: () -> Unit, onSettings: () -> Unit, onBack: () -> Unit, adding: Boolean = false) {
+    val pagePadding = if (LocalConfiguration.current.screenWidthDp < 384) 12.dp else 24.dp
     val reduced = LocalReducedMotion.current
     var selectedValue by rememberSaveable { mutableStateOf(today.toString()) }
     var lastToday by rememberSaveable { mutableStateOf(today.toString()) }
@@ -36,42 +42,43 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
     var query by rememberSaveable { mutableStateOf("") }
     val agenda = remember(state.todos, selected, today, zone) { partitionAgenda(state.todos, selected, today, zone) }
     Scaffold(
-        floatingActionButton = { AnimatedVisibility(!adding, enter = fadeIn(), exit = fadeOut()) { FloatingActionButton(onClick = onAdd, shape = RoundedCornerShape(16.dp)) { Icon(LineIcons.Add, "添加待办") } } },
+        floatingActionButton = { AnimatedVisibility(!adding, enter = fadeIn(), exit = fadeOut()) { FloatingActionButton(onClick = onAdd, shape = CircleShape, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(56.dp)) { Icon(LineIcons.Add, "添加待办") } } },
         topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (all) IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") }
-            else TextButton(onClick = onAll) { Text("全部待办") }
+            IconButton(onClick = if (all) onBack else onSettings) { Icon(if (all) LineIcons.Back else LineIcons.Menu, if (all) "返回" else "设置", modifier = Modifier.size(22.dp)) }
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = onSettings) { Icon(LineIcons.Settings, "设置") }
+            if (all) IconButton(onClick = onSettings) { Icon(LineIcons.Settings, "设置") }
+            else TextButton(onClick = onAll, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) { Text("全部待办", style = MaterialTheme.typography.bodyMedium) }
         } }
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 100.dp)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = pagePadding, end = pagePadding, bottom = 100.dp)) {
             item {
-                Text(if (all) "全部待办" else if (selected == today) "今天" else "日程", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 16.dp))
-                Text(selected.format(DateTimeFormatter.ofPattern("M月d日 EEEE", java.util.Locale.CHINA)), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (all) "全部待办" else if (selected == today) "今天" else "日程", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 14.dp))
+                Text(selected.format(DateTimeFormatter.ofPattern("M月d日 · EEEE", java.util.Locale.CHINA)),
+                    style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 if (!all) {
-                    val total = agenda.scheduled.size + agenda.completed.size
-                    Text("${if (selected == today) "今天" else "当日"} ${agenda.completed.size}/$total", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { selectedValue = selected.minusWeeks(1).toString() }) { Text("上一周") }
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (selected != today) TextButton(onClick = { selectedValue = today.toString() }, contentPadding = PaddingValues(0.dp)) { Text("回到今天") }
+                        else Text("已完成 ${agenda.completed.size} / ${agenda.scheduled.size + agenda.completed.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.weight(1f))
-                        TextButton(onClick = { selectedValue = today.toString() }) { Text("回到今天") }
-                        Spacer(Modifier.weight(1f))
-                        TextButton(onClick = { selectedValue = selected.plusWeeks(1).toString() }) { Text("下一周") }
+                        IconButton(onClick = { selectedValue = selected.minusWeeks(1).toString() }) { Icon(LineIcons.Back, "上一周", Modifier.size(18.dp)) }
+                        IconButton(onClick = { selectedValue = selected.plusWeeks(1).toString() }) { Icon(LineIcons.Forward, "下一周", Modifier.size(18.dp)) }
                     }
-                    // Horizontally scroll at narrow widths/large font scales; never shrink hit targets.
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         val cell = maxOf(48.dp, maxWidth / 7)
-                        Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
+                        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 2.dp, bottom = 22.dp)) {
                             DateTimeUtil.week(selected).forEach { date ->
                                 val count = state.todos.count { it.status == 0 && it.calendarDate(zone) == date }
                                 val active = date == selected
-                                Column(Modifier.width(cell).heightIn(min = 96.dp)
-                                    .border(if (active) 1.dp else 0.dp, if (active) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(28.dp))
-                                    .selectableDate(active, date, count) { selectedValue = date.toString() }.padding(vertical = 12.dp),
+                                Column(Modifier.width(cell).heightIn(min = 88.dp)
+                                    .border(1.dp, if (active) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(28.dp))
+                                    .selectableDate(active, date, count) { selectedValue = date.toString() }.padding(vertical = 10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(listOf("一", "二", "三", "四", "五", "六", "日")[date.dayOfWeek.value - 1], style = MaterialTheme.typography.labelMedium)
-                                    Text("${date.dayOfMonth}", style = MaterialTheme.typography.titleMedium)
-                                    Text(if (count > 0) "•" else " ", color = MaterialTheme.colorScheme.primary)
+                                    Text(listOf("一", "二", "三", "四", "五", "六", "日")[date.dayOfWeek.value - 1], style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${date.dayOfMonth}", style = MaterialTheme.typography.titleLarge)
+                                    val dotColor = MaterialTheme.colorScheme.primary
+                                    Canvas(Modifier.size(width = 18.dp, height = 5.dp)) {
+                                        repeat(minOf(count, 3)) { index -> drawCircle(dotColor, 1.7.dp.toPx(), center = androidx.compose.ui.geometry.Offset(size.width / 2 + (index - (minOf(count, 3) - 1) / 2f) * 6.dp.toPx(), size.height / 2)) }
+                                    }
                                 }
                             }
                         }
@@ -94,10 +101,16 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                     }
                 }
                 section("已逾期", agenda.overdue)
-                section(if (selected == today) "今天" else "当日日程", agenda.scheduled)
+                section("全天", agenda.scheduled.filter { it.allDay })
+                section("日程", agenda.scheduled.filter { !it.allDay })
                 section("无时间", agenda.undated)
                 if (agenda.completed.isNotEmpty()) {
-                    item { TextButton(onClick = { showCompleted = !showCompleted }) { Text("${if (showCompleted) "收起" else "展开"}已完成 · ${agenda.completed.size}") } }
+                    item { Row(Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp).clickable { showCompleted = !showCompleted }
+                        .semantics { contentDescription = "${if (showCompleted) "收起" else "展开"}已完成 · ${agenda.completed.size}" }, verticalAlignment = Alignment.CenterVertically) {
+                        Icon(LineIcons.Down, null, Modifier.size(18.dp).rotate(if (showCompleted) 180f else 0f), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("已完成", Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium)
+                        Text("${agenda.completed.size}", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } }
                     if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
                 }
                 if (!state.loading && state.error == null && agenda.empty) item { EmptyAgenda() }

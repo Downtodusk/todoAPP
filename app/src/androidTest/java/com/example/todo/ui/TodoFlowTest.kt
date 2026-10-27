@@ -3,7 +3,7 @@ package com.example.todo.ui
 import android.app.NotificationManager
 import android.content.Intent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import com.example.todo.App
 import com.example.todo.MainActivity
 import com.example.todo.data.local.ReminderEntity
@@ -58,7 +58,7 @@ class TodoFlowTest {
     @Test fun addCompleteUndo() {
         compose.onNodeWithContentDescription("添加待办").performClick()
         compose.onNodeWithText("标题").performTextInput(title)
-        compose.onNodeWithText("保存", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithText("保存", useUnmergedTree = true).performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithContentDescription("完成 $title").performClick()
         compose.waitUntil(5_000) { compose.onAllNodesWithText("撤销").fetchSemanticsNodes().isNotEmpty() }

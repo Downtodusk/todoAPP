@@ -87,3 +87,12 @@ The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopbac
 - M5: resume device matrix and startup/frame/memory measurement; manually validate diagnostic export and signed Release installation when the user is available. Signed APK delivery and crash-log implementation are complete.
 
 All milestones now have implementation or test tooling, but full acceptance is **not complete**. In particular, reboot reminder recovery remains a known failed device case, whose fix was explicitly deferred. APKs are provided for user feedback, not as evidence that pending acceptance has passed.
+
+## 0.3.0 — U03 + I01 visual alignment
+
+- Home and add/edit now follow the selected warm palette, week/month calendars, monoline icons, circular completion controls, time column, quiet field rows and pinned save action. Existing motion, CRUD, reminders and AI paths remain available.
+- User-approved Source Serif 4 / Source Sans 3 / Source Han Sans SC fonts are bundled offline with OFL notices. This supersedes the earlier system-font-only constraint. API 26–28 uses the bundled CJK font's own Latin glyphs; older-OS runtime verification remains pending.
+- Host validation: **52 JVM tests passed, 1 opt-in network evaluation skipped**, Lint zero errors, Debug/test APKs and signed R8 Release. Profile/benchmark variants also build; no measured frame/startup or generated baseline-profile result is implied.
+- Isolated API 36 emulator: **29 instrumentation tests passed, 1 opt-in manual scenario fixture skipped**; narrow 360dp/130% font UI regression **3/3 passed**; final appearance regression **3/3 passed**. New editor coverage verifies the actual persisted calendar date, note/location, custom reminder and recurrence; existing gesture/undo, fake-client AI, share-intake, Room and Keystore tests now have emulator execution evidence.
+- This updates the earlier “assembled but not executed” status for those tests only on an emulator. It does not replace hardware acceptance, real BYOK evaluation, OPPO background/reboot tests or performance measurement. No operation was performed on the user's phone.
+- Actual rendered screenshots, verification logs and typography limits are documented in [ui-alignment-0.3.0.md](ui-alignment-0.3.0.md). Version **0.3.0 / code 3**, schema v1, existing Debug and Release signing identities retained.

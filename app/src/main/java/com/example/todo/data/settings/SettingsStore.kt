@@ -12,7 +12,7 @@ private val Context.settingsDataStore by preferencesDataStore("settings")
 enum class ReminderMode { STANDARD, ALARM_CLOCK }
 data class UserSettings(
     val theme: String = "SYSTEM",
-    val dynamicColor: Boolean = true,
+    val dynamicColor: Boolean = false,
     val reduceMotion: Boolean? = null,
     val allDayMinute: Int = 540,
     val saveSource: Boolean = false,
@@ -22,7 +22,7 @@ data class UserSettings(
 class SettingsStore(context: Context) {
     private val store = context.settingsDataStore
     val settings = store.data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }.map {
-        UserSettings(it[Theme] ?: "SYSTEM", it[Dynamic] ?: true, it[Motion], it[AllDay] ?: 540, it[SaveSource] ?: false,
+        UserSettings(it[Theme] ?: "SYSTEM", it[Dynamic] ?: false, it[Motion], it[AllDay] ?: 540, it[SaveSource] ?: false,
             ReminderMode.entries.firstOrNull { mode -> mode.name == it[Reminder] } ?: ReminderMode.STANDARD)
     }
     val ai = store.data.map {

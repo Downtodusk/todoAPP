@@ -13,10 +13,12 @@ import kotlinx.coroutines.launch
 data class EditorState(val loading: Boolean = false, val snapshot: TodoSnapshot? = null, val saving: Boolean = false,
     val error: String? = null, val saved: Boolean = false, val missing: Boolean = false, val savedWithReminder: Boolean = false)
 
-class AddViewModel(private val repository: TodoRepository, private val id: Long?) : ViewModel() {
-    private val mutable = MutableStateFlow(EditorState(loading = id != null))
+class AddViewModel(private val repository: TodoRepository, private val id: Long?,
+    initialSnapshot: TodoSnapshot? = null, initialLoaded: Boolean = false) : ViewModel() {
+    private val mutable = MutableStateFlow(EditorState(loading = id != null && !initialLoaded,
+        snapshot = initialSnapshot, missing = initialLoaded && initialSnapshot == null))
     val state = mutable.asStateFlow()
-    init { if (id != null) viewModelScope.launch {
+    init { if (id != null && !initialLoaded) viewModelScope.launch {
         try { val snapshot = repository.get(id); mutable.value = EditorState(snapshot = snapshot, missing = snapshot == null) }
         catch (e: CancellationException) { throw e }
         catch (_: Exception) { mutable.value = EditorState(missing = true, error = "读取失败，请返回后重试") }

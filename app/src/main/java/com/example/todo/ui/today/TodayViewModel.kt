@@ -8,8 +8,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.Immutable
 
 data class TodoMessage(val text: String, val undo: UndoChange? = null)
+// Room emits new read-only snapshots; callers never mutate this list or its immutable rows.
+@Immutable
 data class TodoListState(val loading: Boolean = true, val todos: List<TodoEntity> = emptyList(), val error: String? = null)
 
 class TodayViewModel(private val repository: TodoRepository) : ViewModel() {
@@ -18,10 +21,10 @@ class TodayViewModel(private val repository: TodoRepository) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodoListState())
     private val events = Channel<TodoMessage>(Channel.BUFFERED)
     val messages = events.receiveAsFlow()
-    private fun action(block: suspend () -> Unit) { viewModelScope.launch {
+    private fun action(block: suspend () -> Unit) = viewModelScope.launch {
         try { block() } catch (e: CancellationException) { throw e }
         catch (_: Exception) { events.send(TodoMessage("操作未成功，请重试")) }
-    } }
+    }
     fun complete(todo: TodoEntity) = action {
         if (todo.status == 1) repository.reopen(todo.id)
         else repository.complete(todo.id, expectedRevision = todo.revision)?.let { events.send(TodoMessage(if (todo.repeatRule == null) "已完成" else "已推进至下一次", it)) }

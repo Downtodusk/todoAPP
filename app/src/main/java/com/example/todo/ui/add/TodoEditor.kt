@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.data.local.ReminderEntity
+import com.example.todo.ui.components.todoSharedBounds
 import java.time.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -63,7 +64,7 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
     Column(modifier.verticalScroll(rememberScrollState()).padding(20.dp).imePadding(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (quick) Text("记下一件事", style = MaterialTheme.typography.headlineSmall)
         OutlinedTextField(title, { if (it.length <= 200) title = it }, label = { Text("标题") },
-            singleLine = true, modifier = Modifier.fillMaxWidth().focusRequester(focus), enabled = !saving,
+            singleLine = true, modifier = Modifier.fillMaxWidth().then(if (original == null) Modifier else Modifier.todoSharedBounds(original.id, title = true)).focusRequester(focus), enabled = !saving,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { save() }))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = date == LocalDate.now().toString(), onClick = { date = LocalDate.now().toString() }, label = { Text("今天") })

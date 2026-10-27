@@ -9,6 +9,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.unit.dp
 import com.example.todo.data.settings.*
 import com.example.todo.ui.components.LineIcons
+import com.example.todo.ui.theme.LocalReducedMotion
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,7 +26,7 @@ fun SettingsScreen(settings: UserSettings, store: SettingsStore, onBack: () -> U
                 Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(settings.theme == value, onClick = { change { store.theme(value) } }); Text(label) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) { Text("动态取色", Modifier.weight(1f)); Switch(settings.dynamicColor, onCheckedChange = { change { store.dynamic(it) } }) }
-            Row(verticalAlignment = Alignment.CenterVertically) { Text("动画降级", Modifier.weight(1f)); Switch(settings.reduceMotion == true, onCheckedChange = { change { store.motion(it) } }) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Text("动画降级", Modifier.weight(1f)); Switch(LocalReducedMotion.current, onCheckedChange = { change { store.motion(it) } }) }
             TextButton(onClick = { change { store.motion(null) } }) { Text("动画跟随设备性能（自动）") }
             HorizontalDivider()
             TextButton(onClick = onReminder) { Text("提醒自检") }

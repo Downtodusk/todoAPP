@@ -1,7 +1,10 @@
 package com.example.todo.ui.nav
 
 import android.content.*
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,7 +23,10 @@ import androidx.navigation.navArgument
 import com.example.todo.AppContainer
 import com.example.todo.data.settings.UserSettings
 import com.example.todo.ui.add.*
-import com.example.todo.ui.components.LineIcons
+import com.example.todo.ui.components.*
+import com.example.todo.ui.theme.*
+import com.example.todo.data.repo.TodoSnapshot
+import kotlinx.coroutines.delay
 import com.example.todo.ui.settings.*
 import com.example.todo.ui.today.*
 import java.time.*
@@ -33,8 +39,26 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     val nav = rememberNavController()
     val vm: TodayViewModel = viewModel(factory = viewModelFactory { initializer { TodayViewModel(container.todos) } })
     val state by vm.state.collectAsStateWithLifecycle()
+    ReportDrawnWhen { !state.loading }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val reduced = LocalReducedMotion.current
+    val snapshots = remember { mutableStateMapOf<Long, TodoSnapshot?>() }
+    var sharedTodoId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var sharedOrigin by rememberSaveable { mutableStateOf<String?>(null) }
+    var opening by remember { mutableStateOf(false) }
+    suspend fun openDetail(id: Long, origin: String? = null) {
+        if (opening) return
+        opening = true
+        try {
+            snapshots[id] = container.todos.get(id)
+            sharedTodoId = if (origin != null) id else null
+            sharedOrigin = origin
+            nav.navigate("detail/$id")
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (_: Exception) { snackbar.showSnackbar("读取失败，请重试") }
+        finally { opening = false }
+    }
     var permissionRequest by remember { mutableIntStateOf(0) }
     var add by rememberSaveable { mutableStateOf(false) }
     var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
@@ -55,7 +79,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             val current = nav.currentBackStackEntry
             // Different todos need distinct entries, including editor saveable state.
             if (current?.destination?.route != "detail/{id}" || current.arguments?.getLong("id") != openTodoId) {
-                nav.navigate("detail/$openTodoId")
+                openDetail(openTodoId)
             }
             onIntentConsumed()
         }
@@ -71,28 +95,38 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             if (result == SnackbarResult.ActionPerformed) message.undo?.let(vm::undo)
         }
     }
+    SharedTransitionLayout {
+    CompositionLocalProvider(LocalTodoSharedScope provides this, LocalSharedTodoId provides sharedTodoId) {
     Box(Modifier.fillMaxSize()) {
-        NavHost(nav, startDestination = "today") {
+        NavHost(nav, startDestination = "today",
+            enterTransition = { fadeIn(tween(Motion.DurationMedium, easing = Motion.Enter)) },
+            exitTransition = { fadeOut(tween(Motion.DurationShort, easing = Motion.Exit)) },
+            popEnterTransition = { fadeIn(tween(Motion.DurationMedium)) },
+            popExitTransition = { if (reduced) fadeOut(tween(Motion.DurationShort)) else
+                fadeOut(tween(Motion.DurationMedium)) + scaleOut(tween(Motion.DurationMedium), targetScale = .94f) }) {
             listOf("today", "all").forEach { route -> composable(route) {
-                TodayScreen(state, today, zone, route == "all", onDetail = { nav.navigate("detail/$it") }, onComplete = vm::complete,
-                    onAdd = { add = true }, onAll = { nav.navigate("all") }, onSettings = { nav.navigate("settings") }, onBack = { nav.popBackStack() })
+                CompositionLocalProvider(LocalTodoVisibilityScope provides this, LocalSharedTodoId provides if (sharedOrigin == route) sharedTodoId else null) {
+                TodayScreen(state, today, zone, route == "all", onDetail = { scope.launch { openDetail(it, route) } }, onComplete = vm::complete, onDelete = vm::delete,
+                    onAdd = { add = true }, onAll = { nav.navigate("all") }, onSettings = { nav.navigate("settings") }, onBack = { nav.popBackStack() }, adding = add)
+                }
             } }
             composable("detail/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+                CompositionLocalProvider(LocalTodoVisibilityScope provides this) {
                 val id = entry.arguments!!.getLong("id")
-                val editor: AddViewModel = viewModel(factory = viewModelFactory { initializer { AddViewModel(container.todos, id) } })
+                val editor: AddViewModel = viewModel(factory = viewModelFactory { initializer { AddViewModel(container.todos, id, snapshots[id], snapshots.containsKey(id)) } })
                 val edit by editor.state.collectAsStateWithLifecycle()
                 LaunchedEffect(edit.saved) { if (edit.saved) { if (edit.savedWithReminder) permissionRequest++; nav.popBackStack() } }
-                Scaffold(topBar = { TopAppBar(title = { Text("待办详情") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } },
+                Scaffold(modifier = Modifier.todoSharedBounds(id), topBar = { TopAppBar(title = { Text("待办详情") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } },
                     actions = {
                         TextButton(onClick = { scope.launch {
                             try { container.todos.copy(id)?.let { snackbar.showSnackbar("已复制") } }
                             catch (e: kotlinx.coroutines.CancellationException) { throw e }
                             catch (_: Exception) { snackbar.showSnackbar("复制失败，请重试") }
                         } }) { Text("复制") }
-                        IconButton(onClick = { vm.delete(id); nav.popBackStack() }) { Icon(LineIcons.Delete, "删除") }
+                        IconButton(onClick = { nav.popBackStack(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } }) { Icon(LineIcons.Delete, "删除") }
                     }) }) { padding ->
                     when {
-                        edit.loading -> Text("正在读取…", Modifier.padding(padding).padding(20.dp))
+                        edit.loading -> NoticeSkeleton(Modifier.padding(padding).padding(20.dp))
                         edit.missing -> Text(edit.error ?: "待办已删除", Modifier.padding(padding).padding(20.dp))
                         else -> Column(Modifier.padding(padding)) {
                             if (edit.snapshot?.todo?.status == 0) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
@@ -112,6 +146,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                     }
                 }
             }
+            }
             composable("settings") { SettingsScreen(settings, container.settings, { nav.popBackStack() }, { nav.navigate("ai") }, { nav.navigate("reminder") }) }
             composable("reminder") { ReminderCheckScreen(container, { nav.popBackStack() }, { permissionRequest++ }) }
             composable("ai") {
@@ -125,15 +160,8 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
         }
         SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter).navigationBarsPadding())
     }
-    if (add) {
-        // A unique owner prevents a saved editor state from being reused on the next sheet opening.
-        ModalBottomSheet(onDismissRequest = { add = false }, shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) {
-            val owner = remember { object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() } }
-            DisposableEffect(owner) { onDispose { owner.viewModelStore.clear() } }
-            val editor: AddViewModel = viewModel(viewModelStoreOwner = owner, factory = viewModelFactory { initializer { AddViewModel(container.todos, null) } })
-            val edit by editor.state.collectAsStateWithLifecycle()
-            LaunchedEffect(edit.saved) { if (edit.saved) { if (edit.savedWithReminder) permissionRequest++; add = false } }
-            TodoEditor(null, edit.saving, edit.error, editor::save, { add = false; nav.navigate("ai") }, quick = true, defaultMinute = settings.allDayMinute)
-        }
     }
+    }
+    if (add) QuickAddSheet(container, settings.allDayMinute, onDismiss = { add = false },
+        onSaved = { withReminder -> if (withReminder) permissionRequest++ }, onAi = { nav.navigate("ai") })
 }

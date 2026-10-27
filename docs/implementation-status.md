@@ -52,10 +52,20 @@ Device evidence (2026-10-27, OPPO PLJ110 / API 37):
 
 The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopback port 15037. No claim of three-brand coverage or completed lock/Doze/reboot acceptance is made.
 
+## M3 — interaction implementation, device acceptance deferred
+
+- Swipe left to complete/right to delete, threshold haptics, animated check/strike/fade-collapse, ripple/press scale and stable-key item placement.
+- Shared list/detail container/title bounds, predictive-back transitions, FAB/sheet coordination and a fade-only reduced-motion sheet. Reduced mode uses the explicit user choice or the device low-RAM flag.
+- Detail snapshots load before navigation starts; different todo IDs keep separate editor/navigation states. A canceled completion animation still submits the accepted action.
+- Reusable loading skeleton; isolated `baselineprofile` tooling covers cold start, sheet, scrolling and detail. Unminified profile generation and optimized measurements are separate variants with a `.benchmark` application ID and synthetic data.
+- Procedures and pending visual/performance checks: `docs/motion-and-performance.md`. Generated app baseline/startup profiles are absent until a real collection run succeeds. No frame-rate result is claimed.
+- The M2 checkpoint's 19 passing instrumented tests do not establish M3 acceptance. A new gesture/undo test is assembled for later execution. The user explicitly deferred further phone operations and will download an APK to test when available.
+- Host validation passed: Debug/test APKs, unminified profile and R8 benchmark target/test APKs, unsigned Release APK, 24 JVM tests and Lint. Evidence: `.tools/downloads/m3-final-build-r2.log`. The performance runner's merged manifest was checked to instrument its own package, not the measured app process.
+
 ## Remaining milestones / acceptance
 
 - M2: optional system alarm mode passed lock/process-death and Recents observations. Reboot recovery failed and its fix is deferred by the user; Doze, clock/timezone change and battery-saver device scenarios are not run by user choice. M2 is not fully accepted; the user authorized continuing other tests.
-- M3: gestures, shared transitions, completion animation, performance tooling and device motion validation.
+- M3: execute motion/gesture checks, collect measured baseline profiles and run frame/startup benchmarks when device testing resumes.
 - M4: encrypted BYOK, two providers, editable import preview, share intake, fallback and evaluation set.
 - M5: device matrix, measurements, privacy-safe crash export, signed release and installation instructions.
 

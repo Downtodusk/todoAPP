@@ -13,5 +13,6 @@ Production remains one `app` module. Versions are pinned; no dynamic dependency 
 | DataStore Preferences 1.2.0 | Persist user settings with transactional updates. |
 | JUnit 4, coroutines-test, AndroidX Test, Room testing, Compose UI Test | Test-only dependencies for calendar logic, database integrity and UI behavior. |
 | Espresso 3.7.0 (explicit test-only pin) | Compose transitively selected 3.5.0, which crashes before UI execution on Android 17 because InputManager.getInstance was removed. 3.7.0 uses getSystemService; verified against the official AndroidX Test release notes. |
+| Benchmark Macro JUnit4 1.5.0 and UiAutomator 2.4.0 | Isolated performance test module only; baseline collection and release-like startup/frame measurement. Not packaged into the normal app. |
 
 Release references: [Room](https://developer.android.com/jetpack/androidx/releases/room), [KSP](https://github.com/google/ksp/releases), [Navigation](https://developer.android.com/jetpack/androidx/releases/navigation). No Hilt, Retrofit, Gson, Moshi, extended icon bundle, Firebase or GMS was added.

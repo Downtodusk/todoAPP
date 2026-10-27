@@ -10,7 +10,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.*
-import androidx.compose.ui.text.style.TextDecoration
+import kotlinx.coroutines.Job
+import com.example.todo.ui.components.NoticeSkeleton
+import com.example.todo.ui.theme.LocalReducedMotion
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.ui.unit.dp
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.domain.*
@@ -20,8 +25,9 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boolean,
-    onDetail: (Long) -> Unit, onComplete: (TodoEntity) -> Unit, onAdd: () -> Unit,
-    onAll: () -> Unit, onSettings: () -> Unit, onBack: () -> Unit) {
+    onDetail: (Long) -> Unit, onComplete: (TodoEntity) -> Job, onDelete: (Long) -> Job, onAdd: () -> Unit,
+    onAll: () -> Unit, onSettings: () -> Unit, onBack: () -> Unit, adding: Boolean = false) {
+    val reduced = LocalReducedMotion.current
     var selectedValue by rememberSaveable { mutableStateOf(today.toString()) }
     var lastToday by rememberSaveable { mutableStateOf(today.toString()) }
     LaunchedEffect(today) { if (selectedValue == lastToday) selectedValue = today.toString(); lastToday = today.toString() }
@@ -30,7 +36,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
     var query by rememberSaveable { mutableStateOf("") }
     val agenda = remember(state.todos, selected, today, zone) { partitionAgenda(state.todos, selected, today, zone) }
     Scaffold(
-        floatingActionButton = { FloatingActionButton(onClick = onAdd, shape = RoundedCornerShape(16.dp)) { Icon(LineIcons.Add, "添加待办") } },
+        floatingActionButton = { AnimatedVisibility(!adding, enter = fadeIn(), exit = fadeOut()) { FloatingActionButton(onClick = onAdd, shape = RoundedCornerShape(16.dp)) { Icon(LineIcons.Add, "添加待办") } } },
         topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             if (all) IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") }
             else TextButton(onClick = onAll) { Text("全部待办") }
@@ -73,18 +79,18 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                 } else OutlinedTextField(query, { query = it }, label = { Text("搜索标题、备注、地点") }, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), singleLine = true)
                 HorizontalDivider()
             }
-            if (state.loading) item { Text("正在读取待办…", Modifier.padding(vertical = 24.dp)) }
+            if (state.loading) item { NoticeSkeleton() }
             state.error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
             if (all) {
                 val filtered = state.todos.filter { listOfNotNull(it.title, it.note, it.location).any { text -> text.contains(query, ignoreCase = true) } }
                     .sortedWith(compareBy<TodoEntity> { it.status }.thenBy { it.dueAt == null }.thenBy { it.dueAt })
                 if (!state.loading && filtered.isEmpty()) item { EmptyAgenda() }
-                items(filtered, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, Modifier.animateItem()) }
+                items(filtered, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
             } else {
                 fun section(label: String, todos: List<TodoEntity>) {
                     if (todos.isNotEmpty()) {
                         item(key = label) { Text(label, style = MaterialTheme.typography.titleSmall, color = if (label == "已逾期") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)) }
-                        items(todos, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, Modifier.animateItem()) }
+                        items(todos, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
                     }
                 }
                 section("已逾期", agenda.overdue)
@@ -92,7 +98,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                 section("无时间", agenda.undated)
                 if (agenda.completed.isNotEmpty()) {
                     item { TextButton(onClick = { showCompleted = !showCompleted }) { Text("${if (showCompleted) "收起" else "展开"}已完成 · ${agenda.completed.size}") } }
-                    if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, Modifier.animateItem()) }
+                    if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
                 }
                 if (!state.loading && state.error == null && agenda.empty) item { EmptyAgenda() }
             }
@@ -102,22 +108,6 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
 
 private fun Modifier.selectableDate(active: Boolean, date: LocalDate, count: Int, click: () -> Unit) =
     this.semantics { selected = active; contentDescription = "$date，$count 项待办" }.clickable(onClick = click)
-
-@Composable
-fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit, onComplete: (TodoEntity) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().clickable { onDetail(todo.id) }) {
-        Row(Modifier.heightIn(min = 76.dp).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = todo.status == 1, onCheckedChange = { onComplete(todo) }, modifier = Modifier.semantics { contentDescription = if (todo.status == 1) "重新打开 ${todo.title}" else "完成 ${todo.title}" })
-            Column(Modifier.weight(1f).padding(start = 8.dp)) {
-                Text(todo.title, style = MaterialTheme.typography.bodyLarge, textDecoration = if (todo.status == 1) TextDecoration.LineThrough else null)
-                val time = if (todo.allDay) "${todo.allDayDate} · 全天" else todo.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).format(DateTimeFormatter.ofPattern("M月d日 HH:mm")) } ?: "无时间"
-                Text(listOfNotNull(time, todo.location?.takeIf(String::isNotBlank), if (todo.repeatRule != null) "重复" else null).joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        HorizontalDivider(thickness = 0.5.dp)
-    }
-}
 
 @Composable
 private fun EmptyAgenda() {

@@ -66,6 +66,22 @@ class TodoFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("完成 $title").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(title).assertIsDisplayed()
     }
+    @Test fun swipeCompleteAndDeleteCanBothBeUndone() {
+        val app = (compose.activity.application as App).container
+        val id = runBlocking { app.todos.save(TodoEntity(title = title), emptyList()) }
+        fixtureIds.add(id)
+        val tag = "todo-row-$id"
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag(tag).performScrollTo().performTouchInput { swipeLeft() }
+        compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.status == 1 } }
+        compose.onNodeWithText("撤销").performClick()
+        compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.status == 0 } }
+        compose.onNodeWithTag(tag).performScrollTo().performTouchInput { swipeRight() }
+        compose.waitUntil(5_000) { runBlocking { app.todos.get(id) == null } }
+        compose.onNodeWithText("撤销").performClick()
+        compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.title == title } }
+        compose.onNodeWithText(title).assertIsDisplayed()
+    }
     @Test fun reminderModePersistsAcrossNavigation() {
         val app = (compose.activity.application as App).container
         val original = runBlocking { app.settings.settings.first().reminderMode }

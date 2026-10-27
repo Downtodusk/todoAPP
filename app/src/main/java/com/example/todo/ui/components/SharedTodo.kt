@@ -1,0 +1,24 @@
+package com.example.todo.ui.components
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import com.example.todo.ui.theme.LocalReducedMotion
+import com.example.todo.ui.theme.Motion
+
+val LocalTodoSharedScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
+val LocalTodoVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
+val LocalSharedTodoId = staticCompositionLocalOf<Long?> { null }
+
+@Composable
+fun Modifier.todoSharedBounds(id: Long, title: Boolean = false): Modifier {
+    val shared = LocalTodoSharedScope.current
+    val visibility = LocalTodoVisibilityScope.current
+    if (LocalReducedMotion.current || shared == null || visibility == null || LocalSharedTodoId.current != id) return this
+    return with(shared) {
+        sharedBounds(rememberSharedContentState("todo/$id/${if (title) "title" else "container"}"),
+            animatedVisibilityScope = visibility,
+            boundsTransform = { _, _ -> tween(Motion.DurationMedium, easing = Motion.Enter) })
+    }
+}

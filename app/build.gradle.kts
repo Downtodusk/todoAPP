@@ -26,6 +26,22 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        create("benchmark") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".benchmark"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
+        create("profile") {
+            initWith(getByName("benchmark"))
+            isMinifyEnabled = false
+            isShrinkResources = false
+            matchingFallbacks += "release"
+        }
+    }
+    sourceSets.getByName("profile") {
+        java.srcDir("src/benchmark/java")
+        manifest.srcFile("src/benchmark/AndroidManifest.xml")
     }
     sourceSets.getByName("androidTest").assets.srcDir("schemas")
 }

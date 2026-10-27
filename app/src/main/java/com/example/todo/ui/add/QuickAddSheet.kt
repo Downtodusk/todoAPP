@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> Unit,
-    onSaved: (Boolean) -> Unit, onAi: () -> Unit) {
+    onSaved: (Boolean) -> Unit, onAi: () -> Unit, initialNote: String = "") {
     val reduced = LocalReducedMotion.current
     val scope = rememberCoroutineScope()
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -45,7 +45,7 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
     LaunchedEffect(edit.saved) { if (edit.saved) { close(); onSaved(edit.savedWithReminder) } }
     val content: @Composable () -> Unit = {
         TodoEditor(null, edit.saving || closing, edit.error, editor::save,
-            { if (!closing) scope.launch { close(); onAi() } }, quick = true, defaultMinute = defaultMinute)
+            { if (!closing) scope.launch { close(); onAi() } }, quick = true, defaultMinute = defaultMinute, initialNote = initialNote)
     }
     val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     if (!reduced) {

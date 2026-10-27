@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前是 **M1 基础功能、M2 提醒及 M3 交互实现的开发版本**。M2 检查点通过了 19 项设备自动测试；M3 的手势、动效及性能测试工具已接入，真机体验与性能验收等待后续反馈。M4 AI 导入与 M5 发布验收尚未完成，AI 页面明确显示尚未接入。不要将本开发包视为最终成品。
+当前已实现 **M1–M4：基础待办、提醒、交互与 AI 导入**。M2 检查点通过了 19 项设备自动测试；新增交互、AI 与性能工具已完成主机构建检查，真机体验和正式验收等待后续反馈。不要将开发包视为已经完成全部验收。
 
 ## 构建
 
@@ -38,5 +38,6 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - [依赖用途](docs/dependencies.md)
 - [实现决策](docs/decisions.md)
 - [交互与性能验收](docs/motion-and-performance.md)
+- [AI 配置、隐私与评测](docs/ai-import.md)
 
 `./gradlew :app:assembleRelease` 可验证 R8 和资源裁剪，但当前产物 **未签名，不能直接安装**。正式签名身份尚待 M5 确认，不会以开发签名冒充发布包。真机提醒可靠性、60 fps、冷启动指标和三品牌覆盖均待实测。

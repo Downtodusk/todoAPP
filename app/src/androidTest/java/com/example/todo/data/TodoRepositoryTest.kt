@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.todo.data.local.*
 import com.example.todo.data.repo.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -63,5 +64,26 @@ class TodoRepositoryTest {
         assertEquals(31, repository.get(id)!!.todo.repeatAnchorDay)
         repository.complete(id, zone)
         assertEquals(Instant.parse("2026-03-31T10:00:00Z").toEpochMilli(), repository.get(id)!!.todo.dueAt)
+    }
+    @Test fun importBatchCommitsAllRowsBeforeSchedulingOnce() = runBlocking {
+        var callbacks = 0
+        val repo = TodoRepository(db, onChanged = {
+            callbacks++
+            assertEquals(2, db.todos().observeAll().first().size)
+            assertEquals(2, db.reminders().pending().size)
+        })
+        val items = listOf("第一项", "第二项").map { TodoEntity(title = it) to listOf(ReminderEntity(todoId = 0, triggerAt = 100)) }
+        val ids = repo.importBatch(items, zone)
+        assertEquals(2, ids.distinct().size)
+        assertEquals(1, callbacks)
+    }
+    @Test fun invalidSecondImportRollsBackEntireBatchWithoutScheduling() = runBlocking {
+        var callbacks = 0
+        val repo = TodoRepository(db, onChanged = { callbacks++ })
+        try { repo.importBatch(listOf(TodoEntity(title = "有效") to emptyList(), TodoEntity(title = " ") to emptyList()), zone); fail("must reject") }
+        catch (_: IllegalArgumentException) { }
+        assertTrue(db.todos().observeAll().first().isEmpty())
+        assertTrue(db.reminders().pending().isEmpty())
+        assertEquals(0, callbacks)
     }
 }

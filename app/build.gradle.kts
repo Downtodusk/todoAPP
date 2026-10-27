@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
 android {
@@ -58,8 +59,11 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.5")
     ksp("androidx.room:room-compiler:2.8.5")
     implementation("androidx.datastore:datastore-preferences:1.2.0")
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:5.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test:runner:1.7.0")
@@ -68,4 +72,14 @@ dependencies {
     androidTestImplementation("androidx.room:room-testing:2.8.5")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+// Explicit opt-in only. Ordinary builds/tests never contact a model provider.
+tasks.register<JavaExec>("evaluateNotices") {
+    dependsOn("compileDebugUnitTestKotlin", "processDebugUnitTestJavaRes")
+    mainClass.set("com.example.todo.ai.NoticeParseEvalTest")
+    doFirst {
+        listOf("LLM_BASE_URL", "LLM_KEY", "LLM_MODEL").forEach { check(!System.getenv(it).isNullOrBlank()) { "$it must be set for explicit model evaluation" } }
+        classpath = tasks.named<Test>("testDebugUnitTest").get().classpath
+    }
 }

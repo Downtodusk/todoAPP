@@ -29,7 +29,18 @@ class TodoRepository(val database: TodoDatabase, private val clock: Clock = Cloc
         todos.find(id)?.let { TodoSnapshot(it, reminders.forTodo(id)) }
     }
 
-    suspend fun save(input: TodoEntity, newReminders: List<ReminderEntity>? = null, zone: ZoneId = ZoneId.systemDefault()): Long = change {
+    suspend fun save(input: TodoEntity, newReminders: List<ReminderEntity>? = null, zone: ZoneId = ZoneId.systemDefault()): Long =
+        change { saveInTransaction(input, newReminders, zone) }
+
+    suspend fun importBatch(items: List<Pair<TodoEntity, List<ReminderEntity>>>, zone: ZoneId = ZoneId.systemDefault()): List<Long> = change {
+        require(items.isNotEmpty()) { "请至少选择一项待办" }
+        items.map { (todo, reminders) ->
+            require(todo.id == 0L && todo.status == 0)
+            saveInTransaction(todo, reminders, zone)
+        }
+    }
+
+    private suspend fun saveInTransaction(input: TodoEntity, newReminders: List<ReminderEntity>?, zone: ZoneId): Long {
         val title = input.title.trim()
         require(title.length in 1..200) { "标题需要 1–200 个字符" }
         require(input.status in 0..1)
@@ -62,7 +73,7 @@ class TodoRepository(val database: TodoDatabase, private val clock: Clock = Cloc
                 reminders.insert(it.copy(id = 0, triggerAt = trigger, fired = false))
             }
         }
-        id
+        return id
     }
 
     suspend fun complete(id: Long, zone: ZoneId = ZoneId.systemDefault(), expectedRevision: Long? = null): UndoChange? = change {

@@ -4,6 +4,8 @@ import android.content.Context
 import com.example.todo.data.local.TodoDatabase
 import com.example.todo.data.repo.TodoRepository
 import com.example.todo.data.settings.SettingsStore
+import com.example.todo.data.settings.SecretStore
+import com.example.todo.ai.*
 import com.example.todo.reminder.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,13 @@ class AppContainer(context: Context) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val reminderIssue = MutableStateFlow<String?>(null)
     val settings = SettingsStore(context)
+    val secrets = SecretStore()
+    val noticeParser = NoticeParseRepository(client = {
+        val config = settings.ai.first()
+        if (!config.consentGranted) throw AiException(AiFailure.CONSENT)
+        if (!config.configured) throw AiException(AiFailure.CONFIG)
+        llmClient(config, settings.aiKey(config, secrets))
+    })
     val database by lazy { TodoDatabase.create(context) }
     val alarms = AlarmScheduler(context) { settings.settings.first().reminderMode }
     val notifications = NotificationHelper(context)

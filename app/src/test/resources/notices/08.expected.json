@@ -1,0 +1,12 @@
+{
+  "todos": [
+    {
+      "title": "参加培训",
+      "dueAt": "2026-11-02T09:00",
+      "allDay": false,
+      "location": null,
+      "note": null,
+      "confidence": 0.9
+    }
+  ]
+}

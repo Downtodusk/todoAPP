@@ -62,11 +62,19 @@ The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopbac
 - The M2 checkpoint's 19 passing instrumented tests do not establish M3 acceptance. A new gesture/undo test is assembled for later execution. The user explicitly deferred further phone operations and will download an APK to test when available.
 - Host validation passed: Debug/test APKs, unminified profile and R8 benchmark target/test APKs, unsigned Release APK, 24 JVM tests and Lint. Evidence: `.tools/downloads/m3-final-build-r2.log`. The performance runner's merged manifest was checked to instrument its own package, not the measured app process.
 
+## M4 — AI implementation, device/model acceptance deferred
+
+- Encrypted BYOK settings, one-time send consent, test connection, OpenAI-compatible and Anthropic clients; fixed error messages and bounded responses.
+- Editable selectable preview, atomic batch save and reminder scheduling, explicit local rules/manual fallback, source-retention setting off by default, and ACTION_SEND text intake without automatic sending.
+- 32 synthetic paired evaluation fixtures and an explicitly opt-in evaluator. Real model accuracy has not been measured.
+- Host validation: 47 passing JVM tests, 1 deliberately ignored real-model evaluation; Debug APK, AndroidTest APK, Lint and unsigned R8 Release build passed. Evidence: `.tools/downloads/m4-validation-r1.log`.
+- New Room batch/rollback, Keystore and fake-client UI instrumented tests are assembled, **not executed**. See `docs/ai-import.md` for behavior and limits.
+
 ## Remaining milestones / acceptance
 
 - M2: optional system alarm mode passed lock/process-death and Recents observations. Reboot recovery failed and its fix is deferred by the user; Doze, clock/timezone change and battery-saver device scenarios are not run by user choice. M2 is not fully accepted; the user authorized continuing other tests.
 - M3: execute motion/gesture checks, collect measured baseline profiles and run frame/startup benchmarks when device testing resumes.
-- M4: encrypted BYOK, two providers, editable import preview, share intake, fallback and evaluation set.
+- M4: execute new UI/Keystore/batch tests on a device and evaluate real BYOK provider behavior when requested.
 - M5: device matrix, measurements, privacy-safe crash export, signed release and installation instructions.
 
 Final release signing identity has not been created or selected. Debug APKs are development artifacts.

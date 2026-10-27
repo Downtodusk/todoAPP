@@ -16,3 +16,5 @@ Production remains one `app` module. Versions are pinned; no dynamic dependency 
 | Benchmark Macro JUnit4 1.5.0 and UiAutomator 2.4.0 | Isolated performance test module only; baseline collection and release-like startup/frame measurement. Not packaged into the normal app. |
 
 Release references: [Room](https://developer.android.com/jetpack/androidx/releases/room), [KSP](https://github.com/google/ksp/releases), [Navigation](https://developer.android.com/jetpack/androidx/releases/navigation). No Hilt, Retrofit, Gson, Moshi, extended icon bundle, Firebase or GMS was added.
+
+M4 adds OkHttp **5.5.1** for cancellable direct HTTPS calls and MockWebServer **5.5.1** for local-only HTTP tests. It adds Kotlin serialization compiler plugin **2.4.21** and JSON runtime **1.11.0** for typed responses without reflection. Key encryption uses platform Android Keystore, with no additional security SDK. References: [OkHttp changelog](https://github.com/lysine-dev/okhttp/blob/main/CHANGELOG.md), [Kotlin serialization](https://kotlinlang.org/docs/serialization-get-started.html).

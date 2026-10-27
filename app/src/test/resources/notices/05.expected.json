@@ -1,0 +1,12 @@
+{
+  "todos": [
+    {
+      "title": "参加例会",
+      "dueAt": "2026-11-04T10:00",
+      "allDay": false,
+      "location": "会议室B",
+      "note": null,
+      "confidence": 0.9
+    }
+  ]
+}

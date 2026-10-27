@@ -23,6 +23,9 @@ import androidx.navigation.navArgument
 import com.example.todo.AppContainer
 import com.example.todo.data.settings.UserSettings
 import com.example.todo.ui.add.*
+import com.example.todo.ui.ai.*
+import com.example.todo.SharedNotice
+import kotlinx.coroutines.flow.first
 import com.example.todo.ui.components.*
 import com.example.todo.ui.theme.*
 import com.example.todo.data.repo.TodoSnapshot
@@ -35,12 +38,16 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Long? = null, onIntentConsumed: () -> Unit = {}) {
+fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Long? = null, onIntentConsumed: () -> Unit = {},
+    sharedNotice: SharedNotice? = null, onShareConsumed: () -> Unit = {}) {
     val nav = rememberNavController()
     val vm: TodayViewModel = viewModel(factory = viewModelFactory { initializer { TodayViewModel(container.todos) } })
     val state by vm.state.collectAsStateWithLifecycle()
     ReportDrawnWhen { !state.loading }
     val snackbar = remember { SnackbarHostState() }
+    val importer: AiImportViewModel = viewModel(factory = viewModelFactory { initializer { AiImportViewModel(container.noticeParser, container.todos, container.settings) } })
+    val importState by importer.state.collectAsStateWithLifecycle()
+    val aiConfig by container.settings.ai.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
     val reduced = LocalReducedMotion.current
     val snapshots = remember { mutableStateMapOf<Long, TodoSnapshot?>() }
@@ -61,6 +68,28 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     }
     var permissionRequest by remember { mutableIntStateOf(0) }
     var add by rememberSaveable { mutableStateOf(false) }
+    var manualNote by remember { mutableStateOf("") }
+    LaunchedEffect(sharedNotice) {
+        sharedNotice?.let { shared ->
+            importer.input(shared.text)
+            add = false
+            nav.navigate("ai") { launchSingleTop = true }
+            onShareConsumed()
+            if (!container.settings.ai.first().configured) {
+                nav.navigate("ai-settings")
+                snackbar.showSnackbar("通知已填入，请先配置 AI，或返回使用本地规则")
+            }
+        }
+    }
+    LaunchedEffect(importState.added) {
+        if (importState.added > 0) {
+            val count = importState.added
+            if (importState.addedWithReminder) permissionRequest++
+            nav.popBackStack("today", false)
+            importer.consumed()
+            snackbar.showSnackbar("已添加 $count 项待办")
+        }
+    }
     var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
     var today by remember { mutableStateOf(LocalDate.now(zone)) }
     val context = LocalContext.current
@@ -107,7 +136,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             listOf("today", "all").forEach { route -> composable(route) {
                 CompositionLocalProvider(LocalTodoVisibilityScope provides this, LocalSharedTodoId provides if (sharedOrigin == route) sharedTodoId else null) {
                 TodayScreen(state, today, zone, route == "all", onDetail = { scope.launch { openDetail(it, route) } }, onComplete = vm::complete, onDelete = vm::delete,
-                    onAdd = { add = true }, onAll = { nav.navigate("all") }, onSettings = { nav.navigate("settings") }, onBack = { nav.popBackStack() }, adding = add)
+                    onAdd = { manualNote = ""; add = true }, onAll = { nav.navigate("all") }, onSettings = { nav.navigate("settings") }, onBack = { nav.popBackStack() }, adding = add)
                 }
             } }
             composable("detail/{id}", arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
@@ -147,15 +176,18 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 }
             }
             }
-            composable("settings") { SettingsScreen(settings, container.settings, { nav.popBackStack() }, { nav.navigate("ai") }, { nav.navigate("reminder") }) }
+            composable("settings") { SettingsScreen(settings, container.settings, { nav.popBackStack() }, { nav.navigate("ai") }, { nav.navigate("reminder") }, { nav.navigate("ai-settings") }) }
             composable("reminder") { ReminderCheckScreen(container, { nav.popBackStack() }, { permissionRequest++ }) }
+            composable("ai-settings") { AiSettingsScreen(container, { nav.popBackStack() }) }
             composable("ai") {
-                Scaffold(topBar = { TopAppBar(title = { Text("通知导入") }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } }) }) { padding ->
-                    Column(Modifier.padding(padding).padding(20.dp)) {
-                        Text("AI 导入将在 M4 接入。当前可离线手动添加待办。")
-                        TextButton(onClick = { nav.popBackStack(); add = true }) { Text("手动创建") }
-                    }
-                }
+                DisposableEffect(importer) { onDispose { importer.cancel() } }
+                AiImportScreen(importState, aiConfig, importer::input, importer::recognize, importer::cancel,
+                    importer::update, importer::addSelected, onConsent = { scope.launch {
+                        try { container.settings.aiConsent(true); importer.recognize() }
+                        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                        catch (_: Exception) { snackbar.showSnackbar("授权保存失败，请重试") }
+                    } }, onSettings = { nav.navigate("ai-settings") },
+                    onManual = { manualNote = it; add = true }, onBack = { importer.cancel(); nav.popBackStack() })
             }
         }
         SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter).navigationBarsPadding())
@@ -163,5 +195,5 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     }
     }
     if (add) QuickAddSheet(container, settings.allDayMinute, onDismiss = { add = false },
-        onSaved = { withReminder -> if (withReminder) permissionRequest++ }, onAi = { nav.navigate("ai") })
+        onSaved = { withReminder -> if (withReminder) permissionRequest++ }, onAi = { nav.navigate("ai") { launchSingleTop = true } }, initialNote = manualNote)
 }

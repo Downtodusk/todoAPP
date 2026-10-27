@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(settings: UserSettings, store: SettingsStore, onBack: () -> Unit, onAi: () -> Unit, onReminder: () -> Unit) {
+fun SettingsScreen(settings: UserSettings, store: SettingsStore, onBack: () -> Unit, onAi: () -> Unit, onReminder: () -> Unit, onAiSettings: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var error by remember { mutableStateOf(false) }
     var timeDialog by remember { mutableStateOf(false) }
@@ -32,6 +32,9 @@ fun SettingsScreen(settings: UserSettings, store: SettingsStore, onBack: () -> U
             TextButton(onClick = onReminder) { Text("提醒自检") }
             TextButton(onClick = { timeDialog = true }) { Text("全天提醒时间：%02d:%02d".format(settings.allDayMinute / 60, settings.allDayMinute % 60)) }
             TextButton(onClick = onAi) { Text("AI 通知识别") }
+            TextButton(onClick = onAiSettings) { Text("AI 服务与密钥") }
+            Row(verticalAlignment = Alignment.CenterVertically) { Text("保存导入通知原文", Modifier.weight(1f)); Switch(settings.saveSource, onCheckedChange = { change { store.saveSource(it) } }) }
+            Text("默认不保存原文。开启后，仅保存在对应待办中。", style = MaterialTheme.typography.bodySmall)
             Text("离线保存 · 数据仅在本机", color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (error) Text("设置保存失败，请重试", color = MaterialTheme.colorScheme.error)
         }

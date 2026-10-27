@@ -23,12 +23,12 @@ import java.time.*
 @Composable
 fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (TodoEntity, List<ReminderEntity>?) -> Unit,
     onAi: () -> Unit, modifier: Modifier = Modifier, quick: Boolean = false,
-    reminders: List<ReminderEntity> = emptyList(), defaultMinute: Int = 540) {
+    reminders: List<ReminderEntity> = emptyList(), defaultMinute: Int = 540, initialNote: String = "") {
     val zone = ZoneId.systemDefault()
     val initialDate = original?.allDayDate ?: original?.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate().toString() }
     val initialTime = original?.dueAt?.takeIf { original.allDay.not() }?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalTime().toString() }
     var title by rememberSaveable(original?.id) { mutableStateOf(original?.title ?: "") }
-    var note by rememberSaveable(original?.id) { mutableStateOf(original?.note ?: "") }
+    var note by rememberSaveable(original?.id) { mutableStateOf(original?.note ?: initialNote) }
     var location by rememberSaveable(original?.id) { mutableStateOf(original?.location ?: "") }
     var date by rememberSaveable(original?.id) { mutableStateOf(initialDate) }
     var time by rememberSaveable(original?.id) { mutableStateOf(initialTime) }

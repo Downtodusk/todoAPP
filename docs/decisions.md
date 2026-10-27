@@ -55,3 +55,11 @@
 - The user asked to continue according to plan and will download an APK for testing later. Do not operate the connected phone, run instrumentation or alter its settings until device testing is requested again. Continue host builds/unit checks and preserve pending/failed acceptance items.
 - M3 uses a fade-only bottom-aligned modal editor in reduced mode because the pinned Material 3 1.4 library keeps its motion-scheme override internal. Ordinary mode uses ModalBottomSheet. No internal API suppression or unstable dependency upgrade is introduced for this fallback.
 - Performance tooling runs in its own process and targets only `com.example.todo.benchmark`. Fixture code is excluded from normal debug/release APKs. Collect unobfuscated baseline rules from the non-debuggable `profile` build; rebuild and measure R8 code with `benchmark`. Collection is explicit through the remote-ADB script and is never a side effect of assembling a release.
+
+## M4 AI implementation
+
+- BYOK remains optional. Configuration requires HTTPS with no URL credentials/query parameters; changing provider/base URL requires re-entering a key, whose encrypted envelope is bound to that provider/address using AES-GCM associated data. Model changes can retain the key. No plaintext key is saved in instance state.
+- Data-send consent precedes both test connection and recognition. Sharing a notice only fills the import input; clipboard reads occur only after a tap. Source retention is off by default. Explicit manual creation from an unrecognized notice carries the original text into the editable note as specified.
+- JSON-mode rejection retries once without response_format; HTTP redirects and transport retries are disabled. All errors shown to users are fixed descriptions, never remote response bodies. Response reading is bounded at 256 KiB.
+- Selected preview items are saved atomically before one rescheduling callback. No network error silently selects local rules. Local fallback is deliberately one-item and always goes through preview confirmation.
+- The 32 evaluation fixtures are synthetic. Hosted model evaluation is opt-in only; tests use a fake client or loopback MockWebServer. No user key was requested or used during implementation.

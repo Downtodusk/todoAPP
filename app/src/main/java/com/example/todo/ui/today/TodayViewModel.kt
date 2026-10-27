@@ -24,7 +24,7 @@ class TodayViewModel(private val repository: TodoRepository) : ViewModel() {
     } }
     fun complete(todo: TodoEntity) = action {
         if (todo.status == 1) repository.reopen(todo.id)
-        else repository.complete(todo.id)?.let { events.send(TodoMessage(if (todo.repeatRule == null) "已完成" else "已推进至下一次", it)) }
+        else repository.complete(todo.id, expectedRevision = todo.revision)?.let { events.send(TodoMessage(if (todo.repeatRule == null) "已完成" else "已推进至下一次", it)) }
     }
     fun delete(id: Long) = action { repository.delete(id)?.let { events.send(TodoMessage("已删除", it)) } }
     fun undo(change: UndoChange) = action {

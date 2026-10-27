@@ -55,4 +55,13 @@ class TodoRepositoryTest {
         repository.save(stale.copy(title = "已更新"))
         try { repository.save(stale.copy(title = "过期编辑")); fail("must reject stale edit") } catch (_: IllegalArgumentException) { }
     }
+    @Test fun editingOnlyTimeRetainsMonthlyAnchor() = runBlocking {
+        val due = Instant.parse("2026-02-28T09:00:00Z").toEpochMilli()
+        val id = db.todos().insert(TodoEntity(title = "月末", dueAt = due, repeatRule = "MONTHLY", repeatAnchorDay = 31))
+        val original = repository.get(id)!!.todo
+        repository.save(original.copy(dueAt = due + 3_600_000), zone = zone)
+        assertEquals(31, repository.get(id)!!.todo.repeatAnchorDay)
+        repository.complete(id, zone)
+        assertEquals(Instant.parse("2026-03-31T10:00:00Z").toEpochMilli(), repository.get(id)!!.todo.dueAt)
+    }
 }

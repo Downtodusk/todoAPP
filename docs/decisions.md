@@ -19,3 +19,15 @@
 - Use an isolated minimal project under `.tools/smoke/` to validate the build toolchain before starting application implementation.
 - Keep one production module (`app`); the specified `baselineprofile` module is test tooling.
 - No release signing identity has been created yet. Smoke-test APKs use a development-only debug identity.
+
+## Implementation, 2026-10-27
+
+- M1 checkpoint: `8a7eee1`. The first app schema stores `allDayDate`, `repeatAnchorDay`, and a monotonically increasing per-item `revision`. Revision guards prevent stale editors, notification actions or repeated taps from overwriting/advancing a newer item. Monthly time-only edits preserve the day-of-month anchor.
+- Non-today agenda views show that date's tasks and completed items plus undated tasks. The overdue section appears on Today and is always calculated against the actual current date; this also avoids duplicate item keys when browsing the past.
+- Base palette: warm white `#FAF7F0`, charcoal `#343330`, terracotta `#995139`. Titles use the system serif family; body uses Material system sans. Narrow week strips scroll horizontally to preserve 48 dp touch targets.
+- API 31–32 uses `SCHEDULE_EXACT_ALARM`; API 33+ uses `USE_EXACT_ALARM`. This follows the approved sideload-only distribution decision. No startup permission dialog.
+- Past reminders are not registered with AlarmManager. Recovery checks can catch up pending missed notifications. Denied notifications are not marked fired, allowing recovery after the user grants access. Each reminder delivery is serialized with its database fired flag; retry uses the same notification identity.
+- Manufacturer component candidates are held in a constant map and checked against manifest package visibility before launch, with application-settings fallback. Their effectiveness remains unverified until each device is tested.
+- Self-check creates a visible, persistent test todo rather than an invisible alarm that would be lost on process death. It can be deleted after the test.
+- Release builds currently remain unsigned; no debug key is silently used as a production identity.
+- The user is developing remotely and explicitly chose phone USB on Windows with SSH reverse forwarding for Linux-run device tests. The tunnel listens on Linux loopback port 15037 and forwards to Windows loopback 5037. Device reboot, forced Doze and system clock changes are separate tests requiring coordination with the user.

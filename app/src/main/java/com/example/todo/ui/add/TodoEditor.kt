@@ -15,12 +15,14 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.example.todo.data.local.TodoEntity
+import com.example.todo.data.local.ReminderEntity
 import java.time.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (TodoEntity) -> Unit,
-    onAi: () -> Unit, modifier: Modifier = Modifier, quick: Boolean = false) {
+fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (TodoEntity, List<ReminderEntity>?) -> Unit,
+    onAi: () -> Unit, modifier: Modifier = Modifier, quick: Boolean = false,
+    reminders: List<ReminderEntity> = emptyList(), defaultMinute: Int = 540) {
     val zone = ZoneId.systemDefault()
     val initialDate = original?.allDayDate ?: original?.dueAt?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalDate().toString() }
     val initialTime = original?.dueAt?.takeIf { original.allDay.not() }?.let { Instant.ofEpochMilli(it).atZone(zone).toLocalTime().toString() }
@@ -30,6 +32,11 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
     var date by rememberSaveable(original?.id) { mutableStateOf(initialDate) }
     var time by rememberSaveable(original?.id) { mutableStateOf(initialTime) }
     var repeat by rememberSaveable(original?.id) { mutableStateOf(original?.repeatRule) }
+    var remind by rememberSaveable(original?.id) { mutableStateOf(if (original == null) true else reminders.isNotEmpty()) }
+    var reminderTouched by rememberSaveable(original?.id) { mutableStateOf(false) }
+    var offset by rememberSaveable(original?.id) { mutableStateOf(reminders.firstOrNull()?.let { ((original?.dueAt ?: it.triggerAt) - it.triggerAt) / 60_000 } ?: 0L) }
+    var customOffset by rememberSaveable { mutableStateOf(false) }
+    var customText by rememberSaveable { mutableStateOf("") }
     var dateDialog by rememberSaveable { mutableStateOf(false) }
     var timeDialog by rememberSaveable { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
@@ -39,8 +46,17 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
             val localDate = date?.let(LocalDate::parse)
             val allDay = localDate != null && time == null
             val due = localDate?.atTime(time?.let(LocalTime::parse) ?: LocalTime.MIDNIGHT)?.atZone(zone)?.toInstant()?.toEpochMilli()
-            onSave((original ?: TodoEntity(title = title)).copy(title = title, note = note.ifBlank { null }, location = location.ifBlank { null },
-                dueAt = due, allDay = allDay, allDayDate = if (allDay) date else null, repeatRule = if (date == null) null else repeat))
+            val updated = (original ?: TodoEntity(title = title)).copy(title = title, note = note.ifBlank { null }, location = location.ifBlank { null },
+                dueAt = due, allDay = allDay, allDayDate = if (allDay) date else null, repeatRule = if (date == null) null else repeat)
+            val newReminders = when {
+                due == null -> emptyList()
+                original != null && !reminderTouched && original.allDay == allDay -> null
+                !remind -> emptyList()
+                else -> listOf(ReminderEntity(todoId = original?.id ?: 0, triggerAt = if (allDay)
+                    localDate.atTime(LocalTime.of(defaultMinute / 60, defaultMinute % 60)).atZone(zone).toInstant().toEpochMilli()
+                    else due - offset.coerceAtLeast(0) * 60_000, allDayMinute = if (allDay) defaultMinute else null))
+            }
+            onSave(updated, newReminders)
         }
     }
     LaunchedEffect(quick) { if (quick) { focus.requestFocus(); keyboard?.show() } }
@@ -58,6 +74,17 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
             if (time != null) InputChip(selected = false, onClick = { time = null }, label = { Text("改为全天") })
         }
         if (date != null) {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text("提醒", Modifier.weight(1f))
+                Switch(remind, onCheckedChange = { remind = it; reminderTouched = true })
+            }
+            if (remind && time == null) Text("全天提醒：%02d:%02d（可在设置中修改默认时间）".format(defaultMinute / 60, defaultMinute % 60), style = MaterialTheme.typography.bodySmall)
+            if (remind && time != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(0L to "准时", 5L to "提前5分钟", 10L to "提前10分钟", 30L to "提前30分钟", 60L to "提前1小时", 1440L to "提前1天").forEach { (minutes, label) ->
+                    FilterChip(selected = offset == minutes, onClick = { offset = minutes; reminderTouched = true }, label = { Text(label) })
+                }
+                InputChip(selected = offset !in listOf(0L, 5L, 10L, 30L, 60L, 1440L), onClick = { customText = offset.coerceAtLeast(0).toString(); customOffset = true }, label = { Text("自定义") })
+            }
             Text("重复", style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(null to "不重复", "DAILY" to "每天", "WEEKLY:${LocalDate.parse(date).dayOfWeek.value}" to "每周", "MONTHLY" to "每月").forEach { (rule, label) ->
@@ -78,6 +105,10 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(onClick = save, enabled = title.trim().isNotEmpty() && !saving, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(if (saving) "正在保存…" else "保存") }
     }
+    if (customOffset) AlertDialog(onDismissRequest = { customOffset = false }, title = { Text("提前多少分钟提醒") },
+        text = { OutlinedTextField(customText, { customText = it.filter(Char::isDigit).take(6) }, label = { Text("分钟，最多 525600") }, keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)) },
+        confirmButton = { TextButton(enabled = customText.toLongOrNull() in 0L..525600L, onClick = { offset = customText.toLong(); reminderTouched = true; customOffset = false }) { Text("确定") } },
+        dismissButton = { TextButton(onClick = { customOffset = false }) { Text("取消") } })
     if (dateDialog) {
         val picker = rememberDatePickerState(initialSelectedDateMillis = (date?.let(LocalDate::parse) ?: LocalDate.now()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(onDismissRequest = { dateDialog = false }, confirmButton = { TextButton(onClick = {

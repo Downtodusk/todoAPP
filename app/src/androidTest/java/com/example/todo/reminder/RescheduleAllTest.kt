@@ -109,7 +109,7 @@ class RescheduleAllTest {
 
     private class FakeAlarms : ReminderAlarms {
         val scheduled = mutableMapOf<Long, ReminderEntity>()
-        override fun schedule(reminder: ReminderEntity): Boolean { scheduled[reminder.id] = reminder; return true }
+        override suspend fun schedule(reminder: ReminderEntity): Boolean { scheduled[reminder.id] = reminder; return true }
         override fun cancel(id: Long) { scheduled.remove(id) }
     }
     private class FakeNotifications : ReminderNotifications {

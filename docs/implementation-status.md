@@ -16,7 +16,7 @@ This file separates implemented code, host checks, and device acceptance. An unc
 - Host checks passed: Debug APK, test APK, 24 JVM unit tests, Lint (no errors). Evidence: `.tools/downloads/m1-build.log` (ignored local artifact).
 - Unit tests cover day boundaries, DST days, timezone switching, year/month/leap transitions, recurrence, agenda sections and duplicate-item prevention.
 - Room instrumentation covers cascading deletion, restoring multiple reminders, recurrence and stale edit/undo protection. It must run on an emulator or device; assembling its APK alone is not execution.
-- Device testing not yet performed: no device attached at the initial check.
+- Device testing now runs through Windows USB / SSH on OPPO PLJ110, Android 17/API 37. The 5 Room repository tests and add → complete → undo UI test passed on 2026-10-27.
 
 ## M2 — reminder implementation, device acceptance pending
 
@@ -25,17 +25,36 @@ This file separates implemented code, host checks, and device acceptance. An unc
 - Cold start / boot / package replacement / clock and timezone change recover pending reminders. Missed reminders are delivered once; permission-denied delivery remains pending for recovery.
 - Calendar-based all-day reminder rebasing; absolute timed reminders; cancellation and undo recovery; stale notification/repeated-click guards.
 - Self-check with notification, exact alarm, channel/sound/vibration, battery exemption and manufacturer guidance; persistent 10-second test task.
+- User-approved optional system alarm mode (`setAlarmClock`), stored in DataStore and applied to pending reminders on change and recovery. New installations default to ordinary mode; the user's test phone is explicitly configured for system alarm mode.
 - Default all-day reminder time in settings. Timed reminder offsets include presets and a custom value. Existing multiple-reminder records are retained unless the user explicitly changes the reminder selection.
 - `docs/reminder-test-matrix.md` contains the device acceptance procedure. OEM components are candidates, not verified device behavior.
 - Windows USB → SSH reverse ADB forwarding instructions and Linux wrapper are in `docs/remote-device-testing.md` and `scripts/adb-remote.sh`.
 
-Host checks: Debug APK + AndroidTest APK, JVM unit tests, Lint and R8/shrunk unsigned Release build. Current test sources contain **15 instrumented tests** (5 repository, 9 rescheduling, 1 UI); execution is **pending the device tunnel**. Build evidence: `.tools/downloads/m2-build.log`.
+Host checks: Debug APK + AndroidTest APK, 24 JVM unit tests, Lint and R8/shrunk unsigned Release build. Build evidence: `.tools/downloads/m2-build.log`.
 
-The user chose Windows USB plus SSH ADB forwarding. The Linux-side device connection will use loopback port 15037. No physical tests have been reported as passed.
+Latest production-mode build revalidated all these checks: `.tools/downloads/m2-reminder-mode-build.log`.
+
+Device evidence (2026-10-27, OPPO PLJ110 / API 37):
+
+- The original 15 instrumented tests (5 repository, 9 rescheduling, 1 UI) passed: `.tools/downloads/m2-device-instrumentation-r2.log`.
+- Two additional real-system tests passed with the activity in the foreground: AlarmManager → receiver → notification → Complete, and notification → Postpone 10 minutes with duplicate action protection. Evidence: `.tools/downloads/m2-device-real-alarms-r4.log`.
+- After adopting optional system alarm mode, the complete 18-test suite passed (5 repository, 9 rescheduling, 2 real system/action, 2 UI including mode persistence). Evidence: `.tools/downloads/m2-device-production-mode-suite.log`. The setting was enabled on this phone before this run and restored to that choice by the UI test.
+- The first UI run failed in Espresso 3.5.0 before executing UI actions; pinning stable Espresso 3.7.0 fixed the removed InputManager reflection. App production dependencies did not change.
+- OPPO denied UiAutomation's notification permission grant. The user enabled notifications through the normal system settings UI. Tests now require that permission instead of attempting shell grants.
+- A first real-alarm test without a foreground activity timed out; the system alarm dump showed an OEM adjustment of approximately +3 days. Launching the activity resumed the test process. Foreground success does **not** establish background reliability; separate lock-screen results follow.
+- `DeviceScenarioFixtureTest` is an opt-in preparation/cleanup helper, skipped in ordinary runs. Preparing a fixture is not a passing reminder test. `scripts/read-device-reminder-state.py` observes only the app's DB/WAL without launching the app, to avoid masking failure with cold-start catch-up.
+- The first lock-screen fixture attempt is **INVALID**, not an app reliability result: Android logs show `Force stopping ... finished inst`, which removed the newly registered alarm. The corrected procedure finishes preparation, launches the app once before the deadline to register alarms, verifies an AlarmManager entry, then begins observation. Never run instrumentation during the observation window.
+- Subsequent OPPO runs identified three independent settings: Android battery exemption, OEM “完全允许后台行为”, and autostart allowance. Without autostart, broadcast history explicitly recorded `SKIPPED: oplus startup`. With all enabled, a 60-second ordinary reminder successfully started a dead app process and produced a user-confirmed visible/audible lock-screen notification, but **44.222 seconds late**. Ordinary-mode punctuality remains **failed** on this device. See the full matrix for failed and invalid earlier runs.
+- The user-approved system alarm comparison under lock/process death dispatched +1 ms after the target; the notification record was created +402 ms after the target, with user-confirmed visible/audible receipt. The option was then approved for production. This one-device result does not establish reboot/Doze or other-brand coverage.
+- Production-mode reboot test failed timely recovery: OPPO deferred BootReceiver (`DEFER_BY_OPLUS / PRESSURE`); no alarm/PID and `fired=false` remained at target +87 seconds. A later top-activity launch led to catch-up and is not automatic boot recovery. The user asked to defer fixing reboot recovery and continue other tests; Doze was separately skipped at the user's request.
+- Production-mode Recents-removal test passed: no process before trigger, system dispatch +1 ms, notification record +543 ms, user-confirmed visible/audible delivery. The user deferred battery-saver and timezone device changes as well; no such settings were modified.
+- A new two-notification UI regression test exposed stale detail editor state when opening different todos consecutively. Different todo IDs now get separate navigation entries; reopening the currently displayed ID does not duplicate it. The original failing run remains in `m2-device-navigation-suite.log`. Final full suite: **19/19 PASS**, including notification-to-correct-detail routing, in `m2-device-final-suite.log`; final host validation in `m2-final-validation-build.log`. Test teardown restores ActivityScenario's launch intent after exercising `onNewIntent`.
+
+The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopback port 15037. No claim of three-brand coverage or completed lock/Doze/reboot acceptance is made.
 
 ## Remaining milestones / acceptance
 
-- M2: execute instrumented and real notification tests on the connected phone; complete/review acceptance evidence before moving to motion polish.
+- M2: optional system alarm mode passed lock/process-death and Recents observations. Reboot recovery failed and its fix is deferred by the user; Doze, clock/timezone change and battery-saver device scenarios are not run by user choice. M2 is not fully accepted; the user authorized continuing other tests.
 - M3: gestures, shared transitions, completion animation, performance tooling and device motion validation.
 - M4: encrypted BYOK, two providers, editable import preview, share intake, fallback and evaluation set.
 - M5: device matrix, measurements, privacy-safe crash export, signed release and installation instructions.

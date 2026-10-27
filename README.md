@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前是 **M1 基础功能 + M2 提醒实现的开发版本**。M2 真机验收正在准备；M3 动效、M4 AI 导入与 M5 发布验收尚未完成。AI 页面明确显示尚未接入。不要将本开发包视为最终成品。
+当前是 **M1 基础功能 + M2 提醒实现的开发版本**。M2 正在进行 OPPO Android 17 真机验收，19 项设备自动测试已通过；M3 动效、M4 AI 导入与 M5 发布验收尚未完成。AI 页面明确显示尚未接入。不要将本开发包视为最终成品。
 
 ## 构建
 
@@ -28,6 +28,8 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 手机接在 Windows、开发机为远程 Linux 时，使用 [Windows USB / SSH ADB 转发步骤](docs/remote-device-testing.md)。
 
 安装后可添加、编辑、完成、删除和撤销待办；通过周历或“全部待办”查看未来事项。首次设置提醒时再申请权限，在“设置 → 提醒自检”中检查并测试。系统强行停止期间不能保证提醒；再次打开应用后恢复调度。
+
+提醒默认使用普通模式。可在提醒自检中选择“系统闹钟提醒”；它可能显示系统下一次闹钟标记，并增加资源使用。在本次 OPPO 对照测试中，它改善了锁屏、进程退出后的送达时间；其他机型仍需实测。两种模式均需正确配置通知及厂商后台权限，详见[兼容性决策](docs/reminder-compatibility-proposal.md)。
 
 ## 验证与发布状态
 

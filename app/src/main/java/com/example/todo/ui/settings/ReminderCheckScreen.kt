@@ -12,11 +12,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.*
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.todo.AppContainer
 import com.example.todo.data.local.*
+import com.example.todo.data.settings.ReminderMode
+import com.example.todo.data.settings.UserSettings
 import com.example.todo.reminder.NotificationHelper
 import com.example.todo.ui.components.LineIcons
 import kotlinx.coroutines.launch
@@ -45,6 +50,8 @@ fun ReminderCheckScreen(app: AppContainer, onBack: () -> Unit, requestPermission
     var tick by remember { mutableIntStateOf(0) }
     var message by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var changingMode by remember { mutableStateOf(false) }
+    val settings by app.settings.settings.collectAsStateWithLifecycle(UserSettings())
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) tick++ }
@@ -57,14 +64,34 @@ fun ReminderCheckScreen(app: AppContainer, onBack: () -> Unit, requestPermission
     val battery = remember(tick) { context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName) }
     Scaffold(topBar = { TopAppBar(title = { Text("提醒自检") }, navigationIcon = { IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") } }) }) { padding ->
         Column(Modifier.padding(padding).padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("提醒方式", style = MaterialTheme.typography.titleMedium)
+            listOf(ReminderMode.STANDARD to "普通提醒", ReminderMode.ALARM_CLOCK to "系统闹钟提醒").forEach { (mode, label) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = settings.reminderMode == mode, enabled = !changingMode,
+                        modifier = Modifier.semantics { contentDescription = label }, onClick = {
+                        changingMode = true
+                        scope.launch {
+                            try { app.settings.reminderMode(mode); app.refreshReminders(); message = "提醒方式已保存，正在重新注册未触发的提醒" }
+                            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                            catch (_: Exception) { message = "提醒方式保存失败，请重试" }
+                            finally { changingMode = false }
+                        }
+                    })
+                    Text(label)
+                }
+            }
+            Text("普通提醒为默认方式。系统闹钟提醒适合出现延迟的设备，会显示系统的下一次闹钟标记，可能增加耗电；仍需允许通知、后台运行及自启动。", style = MaterialTheme.typography.bodySmall)
+            HorizontalDivider()
             fun status(ok: Boolean) = if (ok) "已开启" else "未开启"
             Text("通知权限：${status(notifications)}")
             Text("精确闹钟：${status(exact)}")
             Text("通知渠道：${if (channel) "可发送" else "已关闭"}")
             val channelInfo = context.getSystemService(NotificationManager::class.java).getNotificationChannel(NotificationHelper.Channel)
             Text("提示方式：${if (channelInfo?.sound == null) "无铃声" else "有铃声"} · ${if (channelInfo?.shouldVibrate() == true) "有振动" else "无振动"}", style = MaterialTheme.typography.bodySmall)
-            Text("电池优化豁免：${status(battery)}")
+            Text("Android 电池优化豁免：${status(battery)}")
+            Text("厂商的后台运行限制与此项独立，请同时检查下方的设备设置指引。", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = requestPermission) { Text("检查并申请提醒权限") }
+            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text("锁屏通知与显示位置") }
             TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(Settings.EXTRA_CHANNEL_ID, NotificationHelper.Channel)) }) { Text("通知铃声与渠道设置") }
             TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))) }) { Text("允许后台提醒（电池优化）") }
             Button(enabled = !busy, onClick = {
@@ -88,7 +115,8 @@ fun ReminderCheckScreen(app: AppContainer, onBack: () -> Unit, requestPermission
             Text(when (manufacturer) {
                 "xiaomi" -> "在应用管理中开启自启动，将省电策略设为无限制，并在最近任务中锁定待办。"
                 "huawei", "honor" -> "在应用启动管理中关闭自动管理，允许自启动、关联启动和后台活动，并锁定最近任务。"
-                "oppo", "realme", "vivo" -> "在应用电池管理中允许后台运行与自启动，关闭对待办的后台耗电限制，并锁定最近任务。"
+                "oppo", "realme" -> "进入应用详情 → 耗电管理，选择“完全允许后台行为”（部分版本称“允许后台活动”）。再在系统设置中搜索“自启动”，允许待办自启动；否则进程退出后系统可能拦截提醒。Android 的电池优化豁免不能替代这两项。在通知管理中允许锁屏通知，内容是否隐藏由你选择。调整后请再次测试准时性；厂商仍可能延迟闹钟。"
+                "vivo" -> "在应用电池管理中允许后台运行与自启动，关闭对待办的后台耗电限制，并锁定最近任务。"
                 "samsung" -> "在电池设置中将待办加入从不休眠的应用，允许后台活动。"
                 else -> "在应用电池设置中选择不受限制；系统提供自启动或后台运行选项时允许待办运行。"
             })

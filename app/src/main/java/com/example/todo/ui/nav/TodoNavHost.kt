@@ -50,7 +50,16 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { context.unregisterReceiver(receiver); lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(openTodoId) { if (openTodoId != null) { nav.navigate("detail/$openTodoId") { launchSingleTop = true }; onIntentConsumed() } }
+    LaunchedEffect(openTodoId) {
+        if (openTodoId != null) {
+            val current = nav.currentBackStackEntry
+            // Different todos need distinct entries, including editor saveable state.
+            if (current?.destination?.route != "detail/{id}" || current.arguments?.getLong("id") != openTodoId) {
+                nav.navigate("detail/$openTodoId")
+            }
+            onIntentConsumed()
+        }
+    }
     ReminderPermissionHost(container, permissionRequest) { message -> scope.launch {
         if (snackbar.showSnackbar(message, "去设置", duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) nav.navigate("reminder")
     } }

@@ -36,7 +36,7 @@
 | 设置存储 | Jetpack DataStore (Preferences) |
 | 网络 | OkHttp + kotlinx.serialization（MUST NOT 引入 Retrofit/Gson/Moshi） |
 | DI | 手动构造注入（`AppContainer`），MUST NOT 使用 Hilt |
-| 提醒 | `AlarmManager.setExactAndAllowWhileIdle` |
+| 提醒 | 默认 `AlarmManager.setExactAndAllowWhileIdle`；增加用户可选的 `setAlarmClock` 系统闹钟提醒模式（2026-10-27 真机对照后用户确认，见 `docs/decisions.md`） |
 | 密钥存储 | Android Keystore（AES-GCM）加密后存入 DataStore；MUST NOT 明文存储，MUST NOT 写入日志 |
 | minSdk / targetSdk | 26 / 最新稳定 API |
 | 构建 | R8 minify + shrinkResources 开启；包含 Baseline Profile |
@@ -176,6 +176,7 @@ app/src/main/java/com/example/todo/
 
 - AI 设置（见 8.1）
 - 提醒自检（见 6.4）
+- 提醒方式：普通提醒（默认）/ 系统闹钟提醒；后者会显示系统下一次闹钟标记，可能增加耗电，切换后重注册未触发提醒。不得因机型自动、静默切换。用户已选择在其 OPPO 测试手机上启用系统闹钟提醒。
 - 主题：跟随系统 / 浅色 / 深色；动态取色开关（Android 12+）
 - 默认全天提醒时间（默认 09:00）
 - 保存 AI 原文开关（默认关）
@@ -199,6 +200,7 @@ app/src/main/java/com/example/todo/
 
 - `AlarmScheduler.schedule(reminder)`：`PendingIntent` 使用 `requestCode = reminder.id`（Int 范围内），flags=`FLAG_IMMUTABLE | FLAG_UPDATE_CURRENT`，extras 带 `reminderId`
 - `AlarmScheduler.cancel(reminderId)`
+- 用户选中“系统闹钟提醒”时，以 `setAlarmClock(AlarmClockInfo, PendingIntent)` 注册同一 reminder；系统的查看闹钟入口打开对应待办详情。两种模式共享提醒 ID、取消、重复推进、撤销和恢复流程；新安装默认仍为普通提醒。
 - 触发时 `ReminderReceiver`：读取数据库 → 校验 todo 仍为 TODO → 发通知 → `fired=true`；使用 `goAsync()` 并在协程中完成，10 秒内结束
 - 过去的 triggerAt：不调度（若 todo 未完成且 triggerAt 已过且 fired=false，开机重注册时立即补发一次通知）
 - 通知渠道：`todo_reminder`，`IMPORTANCE_HIGH`，用户可自行调整铃声/震动

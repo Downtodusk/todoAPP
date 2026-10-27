@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前已实现 **M1–M4：基础待办、提醒、交互与 AI 导入**。M2 检查点通过了 19 项设备自动测试；新增交互、AI 与性能工具已完成主机构建检查，真机体验和正式验收等待后续反馈。不要将开发包视为已经完成全部验收。
+当前 **0.2.0** 已实现基础待办、提醒、交互、AI 导入，以及日志导出和签名构建。M2 检查点通过了 19 项设备自动测试；新增交互、AI 与性能工具已完成主机构建检查，真机体验和正式验收等待后续反馈。不要将开发包视为已经完成全部验收。
 
 ## 构建
 
@@ -17,7 +17,9 @@ source scripts/android-env.sh
 
 ## 安装开发包
 
-APK：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
+已有此前测试安装时，下载 `dist/todo-0.2.0-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.2.0-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
+
+原始 Debug 构建输出：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -39,5 +41,10 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - [实现决策](docs/decisions.md)
 - [交互与性能验收](docs/motion-and-performance.md)
 - [AI 配置、隐私与评测](docs/ai-import.md)
+- [签名、日志导出与后续反馈](docs/release-and-diagnostics.md)
 
-`./gradlew :app:assembleRelease` 可验证 R8 和资源裁剪，但当前产物 **未签名，不能直接安装**。正式签名身份尚待 M5 确认，不会以开发签名冒充发布包。真机提醒可靠性、60 fps、冷启动指标和三品牌覆盖均待实测。
+`./gradlew :app:assembleRelease` 使用本地发布身份生成可安装的签名包；`bash scripts/package-apks.sh` 汇总 APK、校验值与证书报告到 `dist/`。私钥和 `keystore.properties` 不入 Git，需一起安全备份；新机器应恢复同一身份。
+
+AI 导入使用你自行填写的服务与密钥，默认不保存原文，首次发送前征求授权；可在识别失败后选择本地规则或手动创建。设置中可导出不含用户内容的本地崩溃日志。
+
+已知限制：OPPO 重启恢复提醒失败按用户要求暂缓；Doze、省电、时区、三品牌覆盖、真实模型准确率及启动/帧率/内存指标尚未完成验收。用户会在方便时下载测试，本轮不继续操作手机。

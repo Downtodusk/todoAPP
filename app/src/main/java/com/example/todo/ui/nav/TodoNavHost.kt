@@ -71,14 +71,16 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     var manualNote by remember { mutableStateOf("") }
     LaunchedEffect(sharedNotice) {
         sharedNotice?.let { shared ->
+            val configured = container.settings.ai.first().configured
             importer.input(shared.text)
             add = false
             nav.navigate("ai") { launchSingleTop = true }
-            onShareConsumed()
-            if (!container.settings.ai.first().configured) {
+            if (!configured) {
                 nav.navigate("ai-settings")
-                snackbar.showSnackbar("通知已填入，请先配置 AI，或返回使用本地规则")
+                scope.launch { snackbar.showSnackbar("通知已填入，请先配置 AI，或返回手动创建") }
             }
+            // Consume only after the suspending configuration read; consuming cancels this effect.
+            onShareConsumed()
         }
     }
     LaunchedEffect(importState.added) {
@@ -87,7 +89,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             if (importState.addedWithReminder) permissionRequest++
             nav.popBackStack("today", false)
             importer.consumed()
-            snackbar.showSnackbar("已添加 $count 项待办")
+            scope.launch { snackbar.showSnackbar("已添加 $count 项待办") }
         }
     }
     var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
@@ -176,7 +178,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 }
             }
             }
-            composable("settings") { SettingsScreen(settings, container.settings, { nav.popBackStack() }, { nav.navigate("ai") }, { nav.navigate("reminder") }, { nav.navigate("ai-settings") }) }
+            composable("settings") { SettingsScreen(settings, container.settings, { nav.popBackStack() }, { nav.navigate("ai") }, { nav.navigate("reminder") }, { nav.navigate("ai-settings") }, container.crashLogs) }
             composable("reminder") { ReminderCheckScreen(container, { nav.popBackStack() }, { permissionRequest++ }) }
             composable("ai-settings") { AiSettingsScreen(container, { nav.popBackStack() }) }
             composable("ai") {

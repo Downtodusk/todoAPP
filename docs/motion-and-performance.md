@@ -40,3 +40,17 @@ bash scripts/device-performance.sh benchmark DEVICE_SERIAL
 The explicit script builds/installs only performance variants, runs the selected class, retains logs/traces under ignored `.tools/performance/`, and merges measured baseline/startup files into `app/src/main/` for AGP packaging. It is never invoked by ordinary builds. Profiles are absent until collection actually succeeds; no hand-written rules stand in for a measured profile. Because these tests use the custom forwarded ADB server, collection is explicit rather than automatically attached to a Gradle release build. Commit measured profiles after reviewing them. Record the APK revision and device build alongside every benchmark run.
 
 Sources: [shared transitions and predictive back](https://developer.android.com/develop/ui/compose/animation/shared-elements/navigation), [profile generation](https://developer.android.com/topic/performance/baselineprofiles/create-baselineprofile), [Macrobenchmark](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview).
+
+## M5 measurement record
+
+The benchmark script also records the isolated target's foreground idle PSS/RSS with `dumpsys meminfo`: launch, wait 30 seconds, then take three samples 10 seconds apart. It stores model, OS build and source revision next to the samples. This is a future explicit device run, not a result from the host build.
+
+| Measure | Target / definition | Current evidence |
+| --- | --- | --- |
+| Cold start | Spec target <500 ms; report startup median and p95 with device/compilation mode | Not measured; 10-iteration benchmark prepared |
+| Interaction | Spec dropped-frame fraction ≤10%; inspect actual frame deadlines/traces, not just average duration | Not measured; 5-iteration trace collection prepared |
+| Idle memory | Foreground idle PSS/RSS, three samples after 30 s settling | Not measured |
+| Release APK | Record size without a hard acceptance threshold | See release artifact record in `implementation-status.md` |
+| App baseline/startup profile | Collect actual executed paths and rebuild | Not collected; no fabricated profile files |
+
+Host compilation and the APK's library-contributed profiles do not establish the app's baseline profile or performance acceptance.

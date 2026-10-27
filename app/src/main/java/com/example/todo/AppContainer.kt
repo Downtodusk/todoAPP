@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 
 class AppContainer(context: Context) {
+    val crashLogs = com.example.todo.diagnostics.CrashLogs(java.io.File(context.filesDir, "diagnostics"),
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown", android.os.Build.VERSION.SDK_INT)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val reminderIssue = MutableStateFlow<String?>(null)
     val settings = SettingsStore(context)

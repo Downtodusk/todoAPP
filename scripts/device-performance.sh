@@ -47,4 +47,16 @@ for suffix, target in [('baseline-prof.txt', 'baseline-prof.txt'), ('startup-pro
 print('Measured profiles copied to app/src/main. Rebuild before benchmarking.')
 PY
 fi
+if [[ "$mode" == benchmark ]]; then
+  # Foreground idle memory of the isolated fixture app; never the user's app/data.
+  "${adb[@]}" shell getprop ro.product.model > "$local_dir/device-model.txt"
+  "${adb[@]}" shell getprop ro.build.fingerprint > "$local_dir/device-build.txt"
+  git rev-parse HEAD > "$local_dir/source-commit.txt"
+  "${adb[@]}" shell am start -W -n com.example.todo.benchmark/com.example.todo.MainActivity > "$local_dir/idle-launch.txt"
+  sleep 30
+  for sample in 1 2 3; do
+    "${adb[@]}" shell dumpsys meminfo com.example.todo.benchmark > "$local_dir/memory-$sample.txt"
+    if [[ "$sample" != 3 ]]; then sleep 10; fi
+  done
+fi
 echo "Evidence: $local_dir"

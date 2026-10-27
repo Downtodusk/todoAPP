@@ -63,3 +63,13 @@
 - JSON-mode rejection retries once without response_format; HTTP redirects and transport retries are disabled. All errors shown to users are fixed descriptions, never remote response bodies. Response reading is bounded at 256 KiB.
 - Selected preview items are saved atomically before one rescheduling callback. No network error silently selects local rules. Local fallback is deliberately one-item and always goes through preview confirmation.
 - The 32 evaluation fixtures are synthetic. Hosted model evaluation is opt-in only; tests use a fake client or loopback MockWebServer. No user key was requested or used during implementation.
+
+## M5 delivery preparation
+
+- Added bounded private uncaught-exception records with exception class and call locations only. Exception messages, filenames, thread names, suppressed errors and arbitrary payloads are omitted entirely instead of relying on secret-pattern redaction. Export uses the system document picker only on user action; no analytics/crash service or storage permission is added.
+- Added explicit Android 12+ cloud/device-transfer exclusions in addition to disabled backup, so private local data and Keystore-bound ciphertext do not enter automatic migration.
+- Created a local release signing identity under ignored `signing/`, separate from the existing development identity; the private config is ignored and restricted to owner access. A non-overwriting initialization script and build-time requirement make identity reuse explicit. The user authorized implementation and APK delivery; creating this local signing artifact neither publishes the app nor installs it anywhere.
+- Deliver both signed optimized Release and the existing-signature Debug update. The user's current debug installation should receive the Debug update to retain data; Release cannot overwrite a different signature. Version 0.2.0 uses versionCode 2 and preserves Room schema v1.
+- Device testing remains deferred. Performance scripts are explicit opt-in tooling, and no new phone operation or system-setting change was made while completing M4/M5.
+
+- Final review fixed share-intake sequencing: read configuration and route before consuming the share event, because consuming changes the LaunchedEffect key and cancels it. Success feedback similarly uses a separate UI coroutine after resetting import state. A share-intake device regression is prepared but not run. JSON decoding/validation runs on the default dispatcher to avoid main-thread response parsing.

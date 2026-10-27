@@ -70,11 +70,20 @@ The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopbac
 - Host validation: 47 passing JVM tests, 1 deliberately ignored real-model evaluation; Debug APK, AndroidTest APK, Lint and unsigned R8 Release build passed. Evidence: `.tools/downloads/m4-validation-r1.log`.
 - New Room batch/rollback, Keystore and fake-client UI instrumented tests are assembled, **not executed**. See `docs/ai-import.md` for behavior and limits.
 
+## M5 — delivery implementation, acceptance pending
+
+- Local bounded crash capture and user-selected log export/clear. Reports omit exception messages and user data; host tests verify redaction by omission, bounded cause cycles, retention and cleanup.
+- Version **0.2.0 / code 2**, unchanged Room schema v1. Release uses a distinct locally generated signing identity; Debug retains the development identity for updating the existing test installation without losing data. Private signing files are ignored and owner-only.
+- Android 12+ backup/device-transfer exclusions added alongside disabled backup. Production Release is non-debuggable and excludes performance seed components.
+- Final host checks passed: **50 JVM tests; 1 intentionally skipped network evaluation**, Lint with zero errors, Debug/test APKs, signed R8 Release, both profile/benchmark target and runner APKs. Evidence: `.tools/downloads/final-validation-r2.log`; the subsequently added share-intake regression was assembled and lint-checked in `final-share-test-assembly.log`, not executed on a device.
+- Signature verification passed (APK Signature Scheme v2) for Release; distribution packaging verifies both APKs and writes SHA256SUMS plus certificate reports. Release APK **2,436,785 bytes (2.32 MiB)**; Debug APK **14,707,187 bytes (14.03 MiB)**. These are packaging measurements, not performance results.
+- Install/signing/diagnostic instructions: `docs/release-and-diagnostics.md`. No device operation or real model request was performed during M4/M5 implementation. The new Room/Keystore/AI UI/share regression tests and system log-export path remain unexecuted on hardware.
+
 ## Remaining milestones / acceptance
 
 - M2: optional system alarm mode passed lock/process-death and Recents observations. Reboot recovery failed and its fix is deferred by the user; Doze, clock/timezone change and battery-saver device scenarios are not run by user choice. M2 is not fully accepted; the user authorized continuing other tests.
 - M3: execute motion/gesture checks, collect measured baseline profiles and run frame/startup benchmarks when device testing resumes.
 - M4: execute new UI/Keystore/batch tests on a device and evaluate real BYOK provider behavior when requested.
-- M5: device matrix, measurements, privacy-safe crash export, signed release and installation instructions.
+- M5: resume device matrix and startup/frame/memory measurement; manually validate diagnostic export and signed Release installation when the user is available. Signed APK delivery and crash-log implementation are complete.
 
-Final release signing identity has not been created or selected. Debug APKs are development artifacts.
+All milestones now have implementation or test tooling, but full acceptance is **not complete**. In particular, reboot reminder recovery remains a known failed device case, whose fix was explicitly deferred. APKs are provided for user feedback, not as evidence that pending acceptance has passed.

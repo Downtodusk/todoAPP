@@ -38,12 +38,12 @@ fun AiImportScreen(state: ImportState, configuration: AiConfiguration?, onInput:
                 Text(if (state.saving) "正在添加…" else "添加 ${state.drafts.count { it.selected }} 项待办")
             }
         } }) { padding ->
-        LazyColumn(Modifier.padding(padding).imePadding(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.padding(padding).imePadding().testTag("import-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 OutlinedTextField(state.input, onInput, label = { Text("粘贴通知文本") }, enabled = !busy,
                     minLines = 4, maxLines = 10, modifier = Modifier.fillMaxWidth().testTag("notice-input"))
                 if (prepareNotice(state.input).truncated) Text("识别仅使用整理后的前 2000 字，请确认关键内容未被截断。", color = MaterialTheme.colorScheme.error)
-                if (configuration != null && !configuration.configured) Text("先配置模型服务，或使用离线本地规则。", style = MaterialTheme.typography.bodySmall)
+                if (configuration != null && !configuration.configured) Text("先配置模型服务，或手动创建待办。", style = MaterialTheme.typography.bodySmall)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(enabled = !busy, onClick = {
                         // Read clipboard only in this explicit user action, never on screen entry.
@@ -57,7 +57,7 @@ fun AiImportScreen(state: ImportState, configuration: AiConfiguration?, onInput:
             state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
             if (!state.loading) item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(enabled = !busy && state.input.isNotBlank(), onClick = { onRecognize(true) }) { Text("使用本地规则") }
+                    if (state.error != null) TextButton(enabled = !busy && state.input.isNotBlank(), onClick = { onRecognize(true) }) { Text("使用本地规则") }
                     TextButton(enabled = !busy, onClick = { onManual(state.input) }) { Text("手动创建") }
                 }
             }

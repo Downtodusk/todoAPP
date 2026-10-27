@@ -41,7 +41,7 @@ class AiImportFlowTest {
         compose.onNodeWithText("识别通知").performClick()
         compose.waitUntil(5_000) { importer.state.value.parsed }
         runBlocking { assertTrue(db.todos().observeAll().first().isEmpty()) }
-        compose.onNodeWithTag("draft-0").performScrollTo()
+        compose.onNodeWithTag("import-list").performScrollToNode(hasTestTag("draft-0"))
         compose.onNode(hasSetTextAction() and hasText("模型标题")).performTextReplacement("修改后的标题")
         compose.onNodeWithTag("import-confirm").performClick()
         compose.waitUntil(5_000) { importer.state.value.added == 1 }

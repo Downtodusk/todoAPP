@@ -1,9 +1,13 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+val signingFile = rootProject.file("keystore.properties")
+val releaseIdentity = Properties().apply { if (signingFile.isFile) signingFile.inputStream().use { load(it) } }
 android {
     namespace = "com.example.todo"
     compileSdk = 37
@@ -12,8 +16,8 @@ android {
         applicationId = "com.example.todo"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -21,8 +25,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    signingConfigs {
+        if (signingFile.isFile) create("release") {
+            listOf("storeFile", "storePassword", "keyAlias", "keyPassword").forEach {
+                check(!releaseIdentity.getProperty(it).isNullOrBlank()) { "Missing release signing property: $it" }
+            }
+            storeFile = rootProject.file(releaseIdentity.getProperty("storeFile"))
+            storePassword = releaseIdentity.getProperty("storePassword")
+            keyAlias = releaseIdentity.getProperty("keyAlias")
+            keyPassword = releaseIdentity.getProperty("keyPassword")
+        }
+    }
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -83,3 +99,8 @@ tasks.register<JavaExec>("evaluateNotices") {
         classpath = tasks.named<Test>("testDebugUnitTest").get().classpath
     }
 }
+
+val requireReleaseIdentity by tasks.registering {
+    doLast { check(signingFile.isFile) { "Release signing is not configured. Restore keystore.properties and its key, or explicitly run scripts/create-release-key.py for a new identity." } }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(requireReleaseIdentity) }

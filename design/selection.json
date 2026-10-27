@@ -1,0 +1,12 @@
+{
+  "confirmedOn": "2026-10-27",
+  "userChoice": "U03 + I01",
+  "uiLayout": "U03",
+  "interfaceIconStyle": "I01",
+  "launcherIconStyle": "I01",
+  "uiReference": "exploration-v1/U03.png",
+  "iconReference": "exploration-v1/I01.png",
+  "direction": "简洁、克制、文艺",
+  "implementationLanguage": "zh-CN",
+  "typeface": "待实现时确定，沿用系统字体约束"
+}

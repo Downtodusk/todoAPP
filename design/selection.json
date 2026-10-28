@@ -8,5 +8,5 @@
   "iconReference": "exploration-v1/I01.png",
   "direction": "简洁、克制、文艺",
   "implementationLanguage": "zh-CN",
-  "typeface": "用户确认开源替代：英文 Source Serif 4 / Source Sans 3，中文思源黑体；Android 8/9 使用思源黑体自带拉丁字形"
+  "typeface": "用户确认开源替代：英文 Source Serif 4 / Source Sans 3，中文思源宋体；Android 8/9 使用思源宋体自带拉丁字形"
 }

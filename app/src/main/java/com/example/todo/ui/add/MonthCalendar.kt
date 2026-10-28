@@ -25,7 +25,7 @@ internal fun monthCells(month: YearMonth): List<LocalDate> {
 }
 
 @Composable
-fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<LocalDate> = emptySet(), onSelect: (LocalDate) -> Unit) {
+fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<LocalDate> = emptySet(), onMonthClick: () -> Unit = {}, onClear: () -> Unit = {}, onSelect: (LocalDate) -> Unit) {
     val layoutScale = maxOf(1f, LocalDensity.current.fontScale / 1.3f)
     val today = LocalDate.now()
     var monthText by rememberSaveable { mutableStateOf(YearMonth.from(selected ?: today).toString()) }
@@ -34,7 +34,7 @@ fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<Local
     Column(Modifier.fillMaxWidth().testTag("editor-calendar")) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { monthText = month.minusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Back, "上个月", Modifier.size(18.dp)) }
-            Text("${month.year}年 ${month.monthValue}月", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("${month.year}年 ${month.monthValue}月", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).clip(CircleShape).clickable(enabled = enabled, onClick = onMonthClick).padding(vertical = 12.dp).semantics { contentDescription = "选择年月" }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             IconButton(onClick = { monthText = month.plusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Forward, "下个月", Modifier.size(18.dp)) }
         }
         BoxWithConstraints {
@@ -61,7 +61,8 @@ fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<Local
                 } }
             }
         }
-        Spacer(Modifier.height(16.dp))
+        if (selected != null) TextButton(onClick = onClear, enabled = enabled, modifier = Modifier.align(Alignment.End)) { Text("清除日期") }
+        Spacer(Modifier.height(8.dp))
         HorizontalDivider(thickness = .5.dp)
     }
 }

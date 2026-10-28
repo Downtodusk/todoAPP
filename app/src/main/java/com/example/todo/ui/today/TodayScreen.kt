@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.*
@@ -70,6 +71,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                                 val count = state.todos.count { it.status == 0 && it.calendarDate(zone) == date }
                                 val active = date == selected
                                 Column(Modifier.width(cell).heightIn(min = 88.dp)
+                                    .clip(RoundedCornerShape(28.dp))
                                     .border(1.dp, if (active) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(28.dp))
                                     .selectableDate(active, date, count) { selectedValue = date.toString() }.padding(vertical = 10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -4,22 +4,22 @@ The user deferred further phone operations on 2026-10-27 and will download APKs 
 
 ## Implemented behavior
 
-- Left swipe completes an open todo; right swipe deletes. Threshold crossing produces haptic feedback; color/icon feedback follows displacement. Both actions use the existing revision-safe repository and five-second undo.
+- Left swipe reveals Complete/Reopen, right swipe reveals Delete. Releasing the gesture never mutates data; the user taps the exposed action to execute it. Tapping the row closes the tray. Threshold crossing retains haptic feedback; completion/deletion retain revision protection and undo.
 - Checkbox completion draws the check (200 ms), adds the title strike (150 ms), then fades/collapses (150 ms). Database mutation follows feedback; cancellation of feedback must not discard the accepted action. Stable list IDs retain item placement animation.
 - Rows use ripple and 0.97 press scale. FAB fades while the quick-add sheet is open; successful save hides the sheet before removing it.
-- List/detail containers and title bounds share a transition. Detail snapshots are fetched before starting navigation; separate todo IDs retain separate navigation entries. System predictive back uses Navigation Compose and a seekable scale/fade transition.
+- List/detail containers share a remeasured transition; text is no longer scaled through nested shared title bounds. Detail snapshots are fetched before starting navigation; separate todo IDs retain separate navigation entries. System predictive back uses Navigation Compose and a seekable scale/fade transition.
 - Settings' reduced-motion choice takes priority; automatic mode checks `isLowRamDevice`. Reduced mode disables shared bounds/press scale/collapse and uses fades. Loading placeholders are static in reduced mode; the same shimmer component is available for AI import.
 
 ## Device acceptance, all pending
 
 1. Add, cancel and save from the sheet with keyboard visible; verify no jump and no covered controls.
-2. Swipe partially and release: no mutation; swipe past threshold: one haptic/action; undo completion/deletion, including a recurring task and a task with reminders.
+2. Swipe partially and release: no mutation; swipe past threshold: haptic feedback and a menu, no data change until its button is tapped; undo completion/deletion, including a recurring task and a task with reminders.
 3. Complete several tasks; check animation order and item placement, repeat with reduced motion on.
 4. Enter/return from list and All Todos detail, including long titles and large system text. Test predictive-back completion and cancellation; reopen two different notification details.
 5. Repeat light/dark/dynamic colors and narrow layouts. Confirm accessibility checkbox actions and minimum hit targets.
 6. Generate a profile, rebuild, then measure cold start and frames. Keep raw results and device settings; evaluate the specified frame budget with actual frame samples, not inferred compilation success.
 
-`TodoFlowTest.swipeCompleteAndDeleteCanBothBeUndone` adds automated gesture/undo coverage. It has not been run on the phone after M3 changes.
+`TodoFlowTest.swipeRevealsActionsWithoutMutatingUntilConfirmation` adds automated gesture/undo coverage. It has not been run on the phone after M3 changes.
 
 ## Isolated performance tooling
 

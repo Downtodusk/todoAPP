@@ -84,3 +84,13 @@
 - UI tests now use the pinned Compose library's `junit4.v2.createAndroidComposeRule`. The legacy rule stalled an animated detail transition and failed during lifecycle teardown; the v2 dispatcher completed the same production path. Navigation/Compose production dependency versions and motion were not changed to work around the test runner.
 - Verification uses an isolated API 36 emulator with synthetic fixtures, dedicated ADB port 15038 and serial emulator-5580. It does not use the user's remote phone or port 15037. No reboot, Doze, battery-saver or phone-setting operation is part of this visual pass. Historical OPPO reboot failure remains deferred.
 - Version 0.3.0 / code 3 reuses both existing signing identities and Room schema v1. Debug is the update path for the user's current test installation.
+
+## 0.3.1 user feedback fixes, 2026-10-28
+
+- User approval explicitly replaces swipe-to-execute with swipe-to-reveal: left Complete/Reopen and right Delete. `AnchoredDraggable` holds the row at an 88dp tray; only explicit button clicks mutate data, and tapping the foreground closes the tray. Checkbox and accessibility actions remain explicit actions; undo is retained.
+- Shared list/detail containers use `ResizeMode.RemeasureToBounds`. The mismatched nested shared title targets (list Text versus whole OutlinedTextField) are removed so the transition cannot enlarge the glyphs with their containers. Container movement, fades and back navigation remain.
+- Week cells clip ripple to the same rounded capsule as their outline.
+- The user clarified that open Source Han Serif is acceptable for the requested Chinese Song typeface. It replaces the Chinese sans asset and license, with pinned source and hash; Latin font choices stay unchanged.
+- The separate date form row is removed from add/edit. The upper calendar selects dates; tapping its month/year heading opens the full picker for distant dates. Clear-date remains a calendar action and clears time/recurrence as before.
+- Sheet cancellation/back and successful save coordinate IME dismissal before sheet exit, await actual fade completion in reduced mode, and keep the editor enabled-looking while exiting. The visible home list remains stable while the sheet is open, then reflects saved items after dismissal. Input/save callbacks reject duplicate closing requests.
+- Version 0.3.1 / code 4 retains both signing identities, application ID and Room schema v1. The user's phone is not operated during implementation; the OPPO reboot issue remains explicitly deferred.

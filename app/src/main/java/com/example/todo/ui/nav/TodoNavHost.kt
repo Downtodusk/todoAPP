@@ -69,6 +69,8 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     }
     var permissionRequest by remember { mutableIntStateOf(0) }
     var add by rememberSaveable { mutableStateOf(false) }
+    // Hold the visible list still until the add sheet has finished leaving.
+    val visibleListState = if (add) remember { state } else state
     var manualNote by remember { mutableStateOf("") }
     LaunchedEffect(sharedNotice) {
         sharedNotice?.let { shared ->
@@ -138,7 +140,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 fadeOut(tween(Motion.DurationMedium)) + scaleOut(tween(Motion.DurationMedium), targetScale = .94f) }) {
             listOf("today", "all").forEach { route -> composable(route) {
                 CompositionLocalProvider(LocalTodoVisibilityScope provides this, LocalSharedTodoId provides if (sharedOrigin == route) sharedTodoId else null) {
-                TodayScreen(state, today, zone, route == "all", onDetail = { scope.launch { openDetail(it, route) } }, onComplete = vm::complete, onDelete = vm::delete,
+                TodayScreen(visibleListState, today, zone, route == "all", onDetail = { scope.launch { openDetail(it, route) } }, onComplete = vm::complete, onDelete = vm::delete,
                     onAdd = { manualNote = ""; add = true }, onAll = { nav.navigate("all") }, onSettings = { nav.navigate("settings") }, onBack = { nav.popBackStack() }, adding = add)
                 }
             } }

@@ -12,13 +12,14 @@ val LocalTodoVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?
 val LocalSharedTodoId = staticCompositionLocalOf<Long?> { null }
 
 @Composable
-fun Modifier.todoSharedBounds(id: Long, title: Boolean = false): Modifier {
+fun Modifier.todoSharedBounds(id: Long): Modifier {
     val shared = LocalTodoSharedScope.current
     val visibility = LocalTodoVisibilityScope.current
     if (LocalReducedMotion.current || shared == null || visibility == null || LocalSharedTodoId.current != id) return this
     return with(shared) {
-        sharedBounds(rememberSharedContentState("todo/$id/${if (title) "title" else "container"}"),
+        sharedBounds(rememberSharedContentState("todo/$id/container"),
             animatedVisibilityScope = visibility,
+            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
             boundsTransform = { _, _ -> tween(Motion.DurationMedium, easing = Motion.Enter) })
     }
 }

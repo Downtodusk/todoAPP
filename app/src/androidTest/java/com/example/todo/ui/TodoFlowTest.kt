@@ -66,17 +66,27 @@ class TodoFlowTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithContentDescription("完成 $title").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText(title).assertIsDisplayed()
     }
-    @Test fun swipeCompleteAndDeleteCanBothBeUndone() {
+    @Test fun swipeRevealsActionsWithoutMutatingUntilConfirmation() {
         val app = (compose.activity.application as App).container
         val id = runBlocking { app.todos.save(TodoEntity(title = title), emptyList()) }
         fixtureIds.add(id)
         val tag = "todo-row-$id"
         compose.waitUntil(5_000) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag(tag).performScrollTo().performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+        Assert.assertEquals(0, runBlocking { app.todos.get(id)!!.todo.status })
+        compose.onNodeWithContentDescription("确认完成 $title").assertIsDisplayed().performClick()
         compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.status == 1 } }
         compose.onNodeWithText("撤销").performClick()
         compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.status == 0 } }
         compose.onNodeWithTag(tag).performScrollTo().performTouchInput { swipeRight() }
+        compose.waitForIdle()
+        Assert.assertNotNull(runBlocking { app.todos.get(id) })
+        // Tapping the body closes the revealed menu without opening detail or deleting.
+        compose.onNodeWithText(title).performClick()
+        compose.onNodeWithContentDescription("确认删除 $title").assertDoesNotExist()
+        compose.onNodeWithTag(tag).performTouchInput { swipeRight() }
+        compose.onNodeWithContentDescription("确认删除 $title").performClick()
         compose.waitUntil(5_000) { runBlocking { app.todos.get(id) == null } }
         compose.onNodeWithText("撤销").performClick()
         compose.waitUntil(5_000) { runBlocking { app.todos.get(id)?.todo?.title == title } }

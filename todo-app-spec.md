@@ -40,7 +40,7 @@
 | 密钥存储 | Android Keystore（AES-GCM）加密后存入 DataStore；MUST NOT 明文存储，MUST NOT 写入日志 |
 | minSdk / targetSdk | 26 / 最新稳定 API |
 | 构建 | R8 minify + shrinkResources 开启；包含 Baseline Profile |
-| 字体 | 按用户后续确认，内置 Source Serif 4 / Source Sans 3 与思源黑体（SIL OFL 1.1）；保留许可证与来源，不使用 Claude 专有字体 |
+| 字体 | 按用户后续确认，内置 Source Serif 4 / Source Sans 3 与思源宋体（SIL OFL 1.1）；保留许可证与来源，不使用 Claude 专有字体 |
 | 图标 | 采用用户选定的 I01 极简细线风格；优先用内联 `ImageVector` 保持统一线宽与轮廓，`material-icons-core` 仅在风格一致时复用；MUST NOT 引入 `material-icons-extended` |
 | 依赖原则 | 每新增依赖须说明必要性；优先官方库；在既定技术栈内，依赖取舍优先保证功能、稳定性和体验，不以压缩 APK 体积为首要依据 |
 
@@ -153,7 +153,7 @@ app/src/main/java/com/example/todo/
 
 ### 5.2 QuickAddSheet（快速添加）
 
-- ModalBottomSheet；打开自动聚焦输入框并弹出键盘
+- ModalBottomSheet；打开先显示月历，点击标题输入时弹出键盘；取消／保存退出时协调键盘和 Sheet 动画，退场完成后再移除页面
 - 输入框：标题；回车=保存
 - Chip 行：`今天` `明天` `选时间` `提醒` `重复` `地点` `粘贴通知`
   - `今天/明天`：设置日期（未选时间则 allDay=true）
@@ -169,7 +169,7 @@ app/src/main/java/com/example/todo/
 
 ### 5.4 手势与撤销
 
-- 左滑=完成，右滑=删除；均显示 Snackbar“撤销”（5 秒）
+- 左滑展开完成／重新打开按钮，右滑展开删除按钮；滑动松手不执行，点击按钮后才修改数据，并显示 Snackbar“撤销”（5 秒）
 - 删除撤销需恢复 reminder 并重新注册闹钟
 
 ### 5.5 设置页
@@ -231,7 +231,7 @@ app/src/main/java/com/example/todo/
 - 基础配色参考 U03：暖白背景、炭黑文字、少量低饱和陶土色强调，具体色值写入 `Color.kt`；Android 12+ 默认启用动态取色，设置可关。动态取色和深色模式下保持相同布局、排版层级与细线图标风格
 - 日程以平整行式清单和细分隔线组织，留白适中，减少不必要的卡片包裹和装饰；选中、完成和提醒状态必须清晰可辨
 - 间距基准 8dp；列表项最小高度 56dp；触控目标 ≥ 48dp
-- 文字：使用 M3 Typography 层级；按用户后续确认，英文标题及清单使用 Source Serif 4，辅助文字使用 Source Sans 3，中文使用思源黑体。字体随 APK 离线提供并保留许可证；Android 8/9 使用思源黑体自带拉丁字形兼容回退。以中文版实际可读性和字号缩放表现为准，不宣称复用 Claude 原版字体。
+- 文字：使用 M3 Typography 层级；按用户后续确认，英文标题及清单使用 Source Serif 4，辅助文字使用 Source Sans 3，中文使用思源宋体。字体随 APK 离线提供并保留许可证；Android 8/9 使用思源宋体自带拉丁字形兼容回退。以中文版实际可读性和字号缩放表现为准，不宣称复用 Claude 原版字体。
 - 界面图标采用 I01 的均匀细线、轻圆端点和充足负空间；应用图标沿用 I01 的笔记本与勾选意象，按 Android 图标要求重新制作，不直接裁切风格板
 
 ### 7.2 动效（`Motion.kt` 集中定义常量）
@@ -247,10 +247,10 @@ app/src/main/java/com/example/todo/
 
 | ID | 场景 | 实现要求 | AC |
 |---|---|---|---|
-| M-1 | 列表项 → 详情 | `SharedTransitionLayout` + `sharedBounds`（Container Transform）：卡片放大为详情页，标题共享元素 | 进入/返回均无闪烁，帧率不低于 60fps（中端机） |
+| M-1 | 列表项 → 详情 | `SharedTransitionLayout` + `sharedBounds`（Container Transform）：容器按过渡边界重新布局为详情页，不对文字做整体放大，文字保持原字号，通过淡入淡出衔接 | 进入/返回均无闪烁，帧率不低于 60fps（中端机） |
 | M-2 | 系统返回手势 | Manifest `android:enableOnBackInvokedCallback="true"`；使用 Compose Navigation 的 Predictive Back 支持，手势过程中页面随手指缩放/位移 | Android 14+ 设备上拖动手势可预览上一页，取消手势可回弹 |
 | M-3 | FAB → QuickAddSheet | FAB 容器变形展开为 Sheet（或 FAB 淡出 + Sheet 弹出，若容器变形不稳定则降级） | 无跳变 |
-| M-4 | 左/右滑 | `SwipeToDismissBox`；背景颜色与图标随位移渐变；越过阈值触发 `HapticFeedbackType.LongPress` | 阈值处有触觉反馈；松手未过阈值则 spring 回弹 |
+| M-4 | 左/右滑 | `AnchoredDraggable` 展开一级操作菜单；左滑露出完成／重新打开，右滑露出删除；只有点击菜单按钮才执行；越过展开阈值触发 `HapticFeedbackType.LongPress` | 滑动松手不修改数据；点击按钮执行后可撤销；未过阈值则回弹 |
 | M-5 | 勾选完成 | 复选框描边绘制动画（约 200ms）→ 标题划线从左到右展开 → 条目淡出收起 | 三段动画顺序连贯；其余条目 `Modifier.animateItem()` 平滑补位 |
 | M-6 | 列表增删/重排 | `LazyColumn` 提供稳定 `key = todo.id`；使用 `animateItem` | 无条目跳变 |
 | M-7 | 点击反馈 | 统一 ripple + 按压缩放至 0.97（`graphicsLayer` + `animateFloatAsState`） | 全部可点击卡片一致 |

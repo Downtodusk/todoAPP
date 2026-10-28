@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.todo.ui.components.LineIcons
-import java.time.format.DateTimeFormatter
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -20,13 +19,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.data.local.ReminderEntity
-import com.example.todo.ui.components.todoSharedBounds
 import java.time.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -56,7 +53,6 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
     var textDialog by rememberSaveable { mutableStateOf<String?>(null) }
     var textDraft by rememberSaveable { mutableStateOf("") }
     val focus = remember { FocusRequester() }
-    val keyboard = LocalSoftwareKeyboardController.current
     val save = {
         if (title.trim().isNotEmpty() && !saving) {
             val localDate = date?.let(LocalDate::parse)
@@ -81,16 +77,17 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
             Text("记下一件事", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             TextButton(onClick = onAi, enabled = !saving) { Text("粘贴通知") }
         }
-        MonthCalendar(date?.let(LocalDate::parse), !saving, markedDates) { date = it.toString() }
+        MonthCalendar(date?.let(LocalDate::parse), !saving, markedDates,
+            onMonthClick = { dateDialog = true },
+            onClear = { date = null; time = null; repeat = null }) { date = it.toString() }
         Spacer(Modifier.height(18.dp))
         OutlinedTextField(title, { if (it.length <= 200) title = it }, label = { Text("标题") },
             textStyle = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, lineHeight = 30.sp),
-            modifier = Modifier.fillMaxWidth().testTag("todo-title").then(if (original == null) Modifier else Modifier.todoSharedBounds(original.id, title = true)).focusRequester(focus), enabled = !saving,
+            modifier = Modifier.fillMaxWidth().testTag("todo-title").focusRequester(focus), enabled = !saving,
             shape = RoundedCornerShape(4.dp), maxLines = 3,
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { keyboard?.hide(); save() }))
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { save() }))
         Spacer(Modifier.height(12.dp))
-        EditorField(LineIcons.Calendar, "日期", date?.let { LocalDate.parse(it).format(DateTimeFormatter.ofPattern("yyyy年M月d日", java.util.Locale.CHINA)) } ?: "未设置", !saving) { dateDialog = true }
         EditorField(LineIcons.Clock, "时间", time?.take(5) ?: if (date != null) "全天" else "未设置", !saving) { timeDialog = true }
         EditorField(LineIcons.Location, "地点", location.ifBlank { "未设置" }, !saving) { textDraft = location; textDialog = "地点" }
         EditorField(LineIcons.Note, "备注", note.ifBlank { "未填写" }, !saving) { textDraft = note; textDialog = "备注" }

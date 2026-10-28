@@ -3,6 +3,9 @@ package com.example.todo.ui.today
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.*
+import androidx.compose.foundation.gestures.*
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
@@ -23,8 +26,6 @@ import com.example.todo.data.local.TodoEntity
 import com.example.todo.ui.components.*
 import com.example.todo.ui.theme.*
 import com.example.todo.domain.calendarDate
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.*
@@ -32,13 +33,23 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+private enum class RowAction { Complete, Closed, Delete }
+
 @Composable
 fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
     onComplete: (TodoEntity) -> Job, onDelete: (Long) -> Job, modifier: Modifier = Modifier) {
     val reduced = LocalReducedMotion.current
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { it * .35f })
+    val actionWidth = 88.dp
+    val actionPx = with(LocalDensity.current) { actionWidth.toPx() }
+    val swipe = remember { AnchoredDraggableState(RowAction.Closed) }
+    SideEffect { swipe.updateAnchors(DraggableAnchors {
+        RowAction.Complete at -actionPx
+        RowAction.Closed at 0f
+        RowAction.Delete at actionPx
+    }) }
+    val fling = AnchoredDraggableDefaults.flingBehavior(swipe, positionalThreshold = { it * .4f }, animationSpec = Motion.interaction())
     val interactions = remember { MutableInteractionSource() }
     val pressed by interactions.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed && !reduced) .97f else 1f, Motion.interaction(), label = "row press")
@@ -53,11 +64,11 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
         check.snapTo(if (todo.status == 1) 1f else 0f)
         strike.snapTo(if (todo.status == 1) 1f else 0f)
         disappear.snapTo(1f)
-        swipe.snapTo(SwipeToDismissBoxValue.Settled)
+        swipe.snapTo(RowAction.Closed)
     }
     LaunchedEffect(swipe) {
         snapshotFlow { swipe.targetValue }.collect { target ->
-            if (target != SwipeToDismissBoxValue.Settled) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (target != RowAction.Closed) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
     fun complete() {
@@ -87,39 +98,35 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
             }
         }
     }
-    SwipeToDismissBox(state = swipe, modifier = modifier.testTag("todo-row-${todo.id}").clipToBounds().layout { measurable, constraints ->
+    val offset = swipe.offset.takeIf { it.isFinite() } ?: 0f
+    Box(modifier.testTag("todo-row-${todo.id}").clipToBounds().layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         layout(placeable.width, (placeable.height * if (reduced) 1f else disappear.value).roundToInt()) { placeable.placeRelative(0, 0) }
-    }, gesturesEnabled = !busy,
-        enableDismissFromEndToStart = todo.status == 0,
-        onDismiss = { direction ->
-            if (!busy) {
-                busy = true
-                scope.launch {
-                    try {
-                        if (direction == SwipeToDismissBoxValue.StartToEnd) onDelete(todo.id).join()
-                        else if (direction == SwipeToDismissBoxValue.EndToStart) onComplete(todo).join()
-                    } finally { busy = false; swipe.snapTo(SwipeToDismissBoxValue.Settled) }
+    }) {
+        if (abs(offset) > 1f) {
+            val delete = offset > 0f
+            val label = if (delete) "删除" else if (todo.status == 1) "重新打开" else "完成"
+            val background = if (delete) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
+            val ink = if (delete) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
+            Box(Modifier.matchParentSize(), contentAlignment = if (delete) Alignment.CenterStart else Alignment.CenterEnd) {
+                Column(Modifier.fillMaxHeight().width(actionWidth).background(background)
+                    .semantics { contentDescription = "确认$label ${todo.title}" }
+                    .clickable(enabled = !busy) {
+                        if (delete) {
+                            busy = true
+                            scope.launch { try { onDelete(todo.id).join() } finally { busy = false; swipe.snapTo(RowAction.Closed) } }
+                        } else { scope.launch { swipe.animateTo(RowAction.Closed) }; complete() }
+                    }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                    Icon(if (delete) LineIcons.Delete else LineIcons.Check, null, tint = ink)
+                    Text(label, color = ink, style = MaterialTheme.typography.bodyMedium)
                 }
             }
-        },
-        backgroundContent = {
-            val delete = swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd
-            val color = if (delete) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
-            val alpha = runCatching { abs(swipe.requireOffset()) / 200f }.getOrDefault(0f).coerceIn(0f, 1f)
-            Box(Modifier.fillMaxSize().background(color.copy(alpha = alpha)).padding(horizontal = 20.dp),
-                contentAlignment = if (delete) Alignment.CenterStart else Alignment.CenterEnd) {
-                Row(Modifier.graphicsLayer { this.alpha = alpha }, verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val tint = if (delete) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
-                    Icon(if (delete) LineIcons.Delete else LineIcons.Check, null, tint = tint)
-                    Text(if (delete) "删除" else "完成", color = tint)
-                }
-            }
-        }) {
-        Column(Modifier.fillMaxWidth().todoSharedBounds(todo.id).background(MaterialTheme.colorScheme.surface)
+        }
+        Column(Modifier.fillMaxWidth().offset { IntOffset((swipe.offset.takeIf { it.isFinite() } ?: 0f).roundToInt(), 0) }
+            .anchoredDraggable(swipe, Orientation.Horizontal, enabled = !busy, flingBehavior = fling)
+            .todoSharedBounds(todo.id).background(MaterialTheme.colorScheme.surface)
             .graphicsLayer { scaleX = scale; scaleY = scale; alpha = disappear.value }
-            .clickable(enabled = !busy, interactionSource = interactions, indication = ripple()) { onDetail(todo.id) }
+            .clickable(enabled = !busy, interactionSource = interactions, indication = ripple()) { if (abs(offset) > 1f) scope.launch { swipe.animateTo(RowAction.Closed) } else onDetail(todo.id) }
             .semantics { customActions = listOf(
                 CustomAccessibilityAction("删除") { if (!busy) onDelete(todo.id); true },
                 CustomAccessibilityAction(if (todo.status == 1) "重新打开" else "完成") { complete(); true }) }) {
@@ -146,7 +153,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
                 Column(Modifier.weight(1f).padding(start = 4.dp, end = 2.dp)) {
                     val textColor = if (completed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     Text(todo.title, style = MaterialTheme.typography.bodyLarge, color = textColor,
-                        onTextLayout = { titleLayout = it }, modifier = Modifier.todoSharedBounds(todo.id, title = true).drawWithContent {
+                        onTextLayout = { titleLayout = it }, modifier = Modifier.drawWithContent {
                             drawContent()
                             titleLayout?.let { layout ->
                                 for (line in 0 until layout.lineCount) {

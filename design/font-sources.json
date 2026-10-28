@@ -16,11 +16,11 @@
     "bytes": 431196
   },
   {
-    "name": "source_han_sans_sc_regular.otf",
-    "repository": "source-han-sans",
-    "revision": "a4f7cf94edfb9d7ffbdfc4841de276358bd7e0f2",
-    "url": "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/a4f7cf94edfb9d7ffbdfc4841de276358bd7e0f2/OTF/SimplifiedChinese/SourceHanSansSC-Regular.otf",
-    "sha256": "f1d8611151880c6c336aabeac4640ef434fa13cbfbf1ffe82d0a71b2a5637256",
-    "bytes": 16529832
+    "name": "source_han_serif_sc_regular.otf",
+    "repository": "source-han-serif",
+    "revision": "7889f11bf31170b5d092a083b357c8c8130f89e0",
+    "url": "https://raw.githubusercontent.com/adobe-fonts/source-han-serif/7889f11bf31170b5d092a083b357c8c8130f89e0/OTF/SimplifiedChinese/SourceHanSerifSC-Regular.otf",
+    "sha256": "78aa7a328fd974df2d688c8a9fd74a33d8334dfa84ab24d9d11efb2ffc464117",
+    "bytes": 24543332
   }
 ]

@@ -17,8 +17,8 @@ internal object AppFonts {
         cached?.let { return it }
         val fonts = if (Build.VERSION.SDK_INT >= 29) modern(resources) else {
             // Android 8/9 cannot construct a public custom fallback chain. Keep bundled CJK
-            // coverage and the font's own Source Sans-derived Latin on those versions.
-            val compatible = FontFamily(Typeface(resources.getFont(R.font.source_han_sans_sc_regular)))
+            // coverage and the font's own serif Latin on those versions.
+            val compatible = FontFamily(Typeface(resources.getFont(R.font.source_han_serif_sc_regular)))
             AppFontFamilies(compatible, compatible)
         }
         cached = fonts
@@ -26,7 +26,7 @@ internal object AppFonts {
     }
     @RequiresApi(29)
     private fun modern(resources: Resources): AppFontFamilies {
-        val chinese = android.graphics.fonts.FontFamily.Builder(android.graphics.fonts.Font.Builder(resources, R.font.source_han_sans_sc_regular).build()).build()
+        val chinese = android.graphics.fonts.FontFamily.Builder(android.graphics.fonts.Font.Builder(resources, R.font.source_han_serif_sc_regular).build()).build()
         fun family(latin: Int): FontFamily {
             val primary = android.graphics.fonts.FontFamily.Builder(android.graphics.fonts.Font.Builder(resources, latin).build()).build()
             val native = android.graphics.Typeface.CustomFallbackBuilder(primary).addCustomFallback(chinese)

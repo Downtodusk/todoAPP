@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+val detailMotion = providers.gradleProperty("detailMotion").getOrElse("B")
+require(detailMotion in listOf("A", "B")) { "detailMotion must be A or B" }
 val signingFile = rootProject.file("keystore.properties")
 val releaseIdentity = Properties().apply { if (signingFile.isFile) signingFile.inputStream().use { load(it) } }
 android {
@@ -16,15 +18,16 @@ android {
         applicationId = "com.example.todo"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "0.4.1"
+        versionCode = 7
+        versionName = "0.4.2-$detailMotion"
+        buildConfigField("boolean", "CLASSIC_DETAIL_MOTION", (detailMotion == "A").toString())
         testInstrumentationRunner = "com.example.todo.LocalizedTestRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     // Both languages must remain available offline, including future app bundles.
     bundle { language { enableSplit = false } }
     signingConfigs {

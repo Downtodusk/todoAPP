@@ -127,7 +127,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
                 }
             }
         }
-        Column(Modifier.fillMaxWidth().offset { IntOffset((swipe.offset.takeIf { it.isFinite() } ?: 0f).roundToInt(), 0) }
+        Column(Modifier.fillMaxWidth().todoSharedBounds(todo.id).offset { IntOffset((swipe.offset.takeIf { it.isFinite() } ?: 0f).roundToInt(), 0) }
             .anchoredDraggable(swipe, Orientation.Horizontal, enabled = !busy, flingBehavior = fling)
             .background(MaterialTheme.colorScheme.surface)
             .graphicsLayer { scaleX = scale; scaleY = scale; alpha = disappear.value }

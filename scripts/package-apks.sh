@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/android-env.sh
-./gradlew :app:assembleDebug :app:assembleRelease --console=plain
+./gradlew :app:assembleDebug :app:assembleRelease --console=plain "$@"
 mkdir -p dist
 version="$(python3 - <<'PY'
 import json
@@ -30,10 +30,13 @@ for path in files:
     checksums.append(f'{digest}  {path.name}')
     print(f'{path}: {path.stat().st_size:,} bytes ({path.stat().st_size / 1048576:.2f} MiB)')
 Path('dist/SHA256SUMS').write_text('\n'.join(checksums) + '\n')
-Path('dist/build-info.json').write_text(json.dumps({
+Path(f'dist/SHA256SUMS-{version}').write_text('\n'.join(checksums) + '\n')
+build_info = json.dumps({
     'version': version,
     'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
     'workingTreeModified': bool(subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()),
     'deviceAcceptanceComplete': False,
-}, indent=2) + '\n')
+}, indent=2) + '\n'
+Path('dist/build-info.json').write_text(build_info)
+Path(f'dist/build-info-{version}.json').write_text(build_info)
 PY

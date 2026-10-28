@@ -119,3 +119,12 @@ All milestones now have implementation or test tooling, but full acceptance is *
 - Debug/test, signed R8 Release and profile/benchmark target/runner builds pass; runner signatures verified. 54 JVM passes, 1 opt-in real-model skip; Lint zero errors. Full API 36 instrumentation: 38 passes, 1 manual-fixture skip. Narrow 360dp/130% font and final normal-size focused tests each pass 2/2. New tests verify completed-item positions and stable long-title layout during normal/reduced transitions.
 - Actual focused R8/Full-AOT emulator benchmark: 10 iterations × 3 round trips per version. Frame CPU P95 was 80.41ms in 0.4.0 and 40.77ms in 0.4.1; frame deadline overrun P95 was 96.03ms and 35.36ms. These are software-rendered emulator results, not phone FPS or ≤10% dropped-frame acceptance. Baseline Profile collection and hardware testing remain pending.
 - Performance runner signing and fixture restart/selection were corrected after their first installation/execution checks. See [method, raw metrics, screenshots and limits](ui-fixes-0.4.1.md). Version **0.4.1 / code 6**, same signing identities and schema; deferred OPPO boot behavior unchanged.
+
+
+## 0.4.2 — requested A/B detail motion comparison
+
+- A preserves the 0.4.0 shared-container bounds/timing, with the editor measured at its final lookahead size. B retains 0.4.1 entry and adds bounded native predictive-back scaling, rounded clipping, cancellation recovery and committed vertical retraction. Old closing entries cannot pop a newly opened notification detail.
+- Same package identity, versionCode 7, version names 0.4.2-A / 0.4.2-B; build with `-PdetailMotion=A|B`. Both update the existing same-signature installation and can replace each other. No schema or saved motion preference changes.
+- Each variant: 55 JVM passes / 1 model skip, Lint zero errors; full API 36 suite 40 passes / 1 manual-fixture skip; narrow 360dp / 130% font checks 2/2 each. After the concurrent-notification guard, B gesture/return focused checks pass 3/3.
+- Same-session R8/Full-AOT emulator measurement: old 0.4.0 CPU-frame P95 92.76ms, A 60.83ms, B 37.61ms (10 × 3 round trips per APK). Approximate reductions 34.4% / 59.5%, not hardware FPS or global dropped-frame acceptance. Full method, measured-APK hashes, late guard scope, screenshots and raw metrics are in [detail-motion-0.4.2.md](detail-motion-0.4.2.md).
+- The user will test downloaded APKs; no phone interaction or deferred boot-reminder work was performed.

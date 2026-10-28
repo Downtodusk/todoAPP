@@ -1,0 +1,61 @@
+{
+  "environment": "API 36 x86_64; 1080x2400; 420dpi; fontScale 1.0; SwiftShader; same session, sequential old/A/B; no concurrent builds",
+  "method": "DetailTransitionBenchmark; R8 target; CompilationMode.Full(); 10 iterations x 3 round trips; button Back; native predictive progress/cancel validated separately through dispatcher instrumentation",
+  "limits": "Emulator only, not phone FPS, system gesture delivery, dropped-frame acceptance or a generated Baseline Profile.",
+  "results": {
+    "0.4.0": {
+      "apkSha256": "89e12818f99eec1bb112e83543d91d76472575fbd4610a88b88d227910c9a19b",
+      "frames": 935.0,
+      "metrics": {
+        "frameDurationCpuMs": {
+          "P50": 47.417459,
+          "P90": 81.0965358,
+          "P95": 92.76210189999999,
+          "P99": 107.58431941999999
+        },
+        "frameOverrunMs": {
+          "P50": 46.928954,
+          "P90": 97.5822064,
+          "P95": 111.14407699999998,
+          "P99": 136.24103535999996
+        }
+      }
+    },
+    "0.4.2-A": {
+      "apkSha256": "549c01bb23150ff9a6d0703a58900a8fe729403108f04e97ee16690383a32538",
+      "frames": 1095.0,
+      "metrics": {
+        "frameDurationCpuMs": {
+          "P50": 43.757009,
+          "P90": 56.455100400000006,
+          "P95": 60.8309074,
+          "P99": 68.10009837999993
+        },
+        "frameOverrunMs": {
+          "P50": 41.382348,
+          "P90": 60.08803520000001,
+          "P95": 64.26069339999998,
+          "P99": 75.13565941999981
+        }
+      }
+    },
+    "0.4.2-B": {
+      "apkSha256": "a68af2729391dbfa3d50de76618ae778cc6a1f704002196aefdd621f9056f462",
+      "frames": 1060.0,
+      "metrics": {
+        "frameDurationCpuMs": {
+          "P50": 23.018577,
+          "P90": 34.0408885,
+          "P95": 37.61278484999999,
+          "P99": 55.87199812000013
+        },
+        "frameOverrunMs": {
+          "P50": 7.7151475000000005,
+          "P90": 25.4949021,
+          "P95": 29.846511999999986,
+          "P99": 73.03526100000016
+        }
+      }
+    }
+  }
+}

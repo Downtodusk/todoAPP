@@ -109,3 +109,9 @@
 - Replace the 0.3.1 full-editor `RemeasureToBounds` transition with fixed-size page placement and alpha animation. The calendar, text fields and rows no longer continuously reflow to a list-row rectangle; text is not scaled. Forward/return last 220/180ms, with a 90ms opacity handoff and a theme-colored backing surface. Reduced motion remains fade-only. This supersedes the earlier shared-container implementation in response to the user's visual/performance feedback.
 - Add an isolated R8/Full-AOT list/detail benchmark and compare 0.4.0 with 0.4.1 on the same software-rendered emulator. Do not interpret these samples as hardware acceptance, infer FPS from CPU frame duration, or mark Baseline Profile collection complete.
 - Existing test runner signing and seed-activity restart/order assumptions were corrected to make the previously assemble-only performance tools runnable. Production Debug/Release identities, DB schema and phone settings are untouched.
+
+## User-requested detail motion comparison, 2026-10-28
+
+- Deliver two interchangeable 0.4.2 builds. A retains the 0.4.0 shared-container trajectory and timing, while fixing the heavy editor at its lookahead layout size. B retains 0.4.1 entry, adds bounded predictive-back card scaling with rounded corners, then vertically retracts on committed return. Cancellation restores the existing draft.
+- Both use the same application ID, versionCode 7 and existing signing identity per build type, so A/B can replace each other without clearing data. Build property `detailMotion=A|B` selects behavior; default B is an implementation default for the comparison, not a user selection of the final preferred animation. No persisted preference is changed.
+- Reduced motion takes priority. Device work remains deferred; use the isolated emulator for regression and controlled comparisons, with no claim of OPPO gesture smoothness until user feedback. The known deferred boot-reminder issue is outside this change.

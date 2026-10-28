@@ -1,5 +1,7 @@
 package com.example.todo.ai
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 enum class AiProvider { OPENAI_COMPAT, ANTHROPIC }
@@ -16,10 +18,10 @@ data class AiConfiguration(
     fun validated(): AiConfiguration {
         val url = baseUrl.trim().toHttpUrlOrNull()
         require(url != null && url.isHttps && url.username.isEmpty() && url.password.isEmpty() && url.query == null && url.fragment == null) {
-            "请输入 HTTPS 服务地址，不要在地址中填写密钥或查询参数"
+            t(R.string.enter_an_https_service_address_without_credentials_or_query_param)
         }
-        require(model.trim().isNotEmpty()) { "请填写模型名称" }
-        require(timeoutSeconds in 1..120) { "超时需要设置为 1–120 秒" }
+        require(model.trim().isNotEmpty()) { t(R.string.enter_a_model_name) }
+        require(timeoutSeconds in 1..120) { t(R.string.timeout_must_be_1_120_seconds) }
         return copy(baseUrl = url.toString().trimEnd('/'), model = model.trim())
     }
     fun keyBinding() = "${provider.name}|${baseUrl.trimEnd('/')}"
@@ -28,13 +30,13 @@ data class AiConfiguration(
 enum class AiFailure { AUTH, URL, TIMEOUT, NETWORK, RESPONSE, RATE_LIMIT, SERVER, CONFIG, CONSENT }
 class AiException(val kind: AiFailure) : Exception(kind.name)
 fun Throwable.aiMessage(): String = when ((this as? AiException)?.kind) {
-    AiFailure.AUTH -> "鉴权失败，请检查 API Key 和服务商权限（401/403）"
-    AiFailure.URL -> "接口地址不存在，请检查 Base URL（404）"
-    AiFailure.TIMEOUT -> "请求超时，请重试或调整超时时间"
-    AiFailure.NETWORK -> "网络连接失败，请检查网络或使用本地规则"
-    AiFailure.RATE_LIMIT -> "服务商暂时限流或额度不足，请稍后重试（429）"
-    AiFailure.SERVER -> "模型服务暂时不可用，请稍后重试"
-    AiFailure.CONFIG -> "AI 配置或密钥不可用，请重新保存设置"
-    AiFailure.CONSENT -> "请先确认将通知文本发送到你配置的模型服务商"
-    else -> "模型返回的内容无法识别，请重试或使用本地规则"
+    AiFailure.AUTH -> t(R.string.authentication_failed_check_your_api_key_and_provider_permissions)
+    AiFailure.URL -> t(R.string.endpoint_not_found_check_the_base_url_404)
+    AiFailure.TIMEOUT -> t(R.string.request_timed_out_retry_or_increase_the_timeout)
+    AiFailure.NETWORK -> t(R.string.connection_failed_check_your_network_or_use_local_rules)
+    AiFailure.RATE_LIMIT -> t(R.string.rate_limit_or_quota_reached_try_again_later_429)
+    AiFailure.SERVER -> t(R.string.the_model_service_is_temporarily_unavailable_try_again_later)
+    AiFailure.CONFIG -> t(R.string.ai_configuration_or_key_is_unavailable_save_your_settings_again)
+    AiFailure.CONSENT -> t(R.string.confirm_that_text_may_be_sent_to_your_configured_model_provider_f)
+    else -> t(R.string.could_not_read_the_model_response_retry_or_use_local_rules)
 }

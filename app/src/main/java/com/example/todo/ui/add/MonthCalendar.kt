@@ -1,5 +1,8 @@
 package com.example.todo.ui.add
 
+import com.example.todo.R
+import com.example.todo.i18n.t
+import com.example.todo.i18n.appLocale
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -33,14 +36,14 @@ fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<Local
     LaunchedEffect(selected) { selected?.let { monthText = YearMonth.from(it).toString() } }
     Column(Modifier.fillMaxWidth().testTag("editor-calendar")) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { monthText = month.minusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Back, "上个月", Modifier.size(18.dp)) }
-            Text("${month.year}年 ${month.monthValue}月", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).clip(CircleShape).clickable(enabled = enabled, onClick = onMonthClick).padding(vertical = 12.dp).semantics { contentDescription = "选择年月" }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-            IconButton(onClick = { monthText = month.plusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Forward, "下个月", Modifier.size(18.dp)) }
+            IconButton(onClick = { monthText = month.minusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Back, t(R.string.previous_month), Modifier.size(18.dp)) }
+            Text(month.format(java.time.format.DateTimeFormatter.ofPattern(t(R.string.month_pattern), appLocale())), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).clip(CircleShape).clickable(enabled = enabled, onClick = onMonthClick).padding(vertical = 12.dp).semantics { contentDescription = t(R.string.choose_month_and_year) }, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            IconButton(onClick = { monthText = month.plusMonths(1).toString() }, enabled = enabled) { Icon(LineIcons.Forward, t(R.string.next_month), Modifier.size(18.dp)) }
         }
         BoxWithConstraints {
             val cellWidth = maxOf(48.dp, (40 * layoutScale).dp, maxWidth / 7)
             Column(Modifier.horizontalScroll(rememberScrollState())) {
-                Row { listOf("一", "二", "三", "四", "五", "六", "日").forEach { day ->
+                Row { listOf(t(R.string.mon), t(R.string.tue), t(R.string.wed), t(R.string.thu), t(R.string.fri), t(R.string.sat), t(R.string.sun)).forEach { day ->
                     Box(Modifier.width(cellWidth).height(32.dp), contentAlignment = Alignment.Center) { Text(day, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } }
                 monthCells(month).chunked(7).forEach { week -> Row {
@@ -48,7 +51,7 @@ fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<Local
                         val active = selected == day
                         val inMonth = YearMonth.from(day) == month
                         Box(Modifier.width(cellWidth).height(maxOf(48.dp, (48 * layoutScale).dp)).clip(CircleShape)
-                            .semantics { this.selected = active; contentDescription = "选择日期 $day" }
+                            .semantics { this.selected = active; contentDescription = t(R.string.select_date_accessible, day) }
                             .clickable(enabled = enabled) { onSelect(day) }, contentAlignment = Alignment.Center) {
                             Box(Modifier.size((38 * layoutScale).dp).background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent, CircleShape)
                                 .border(1.dp, if (day == today && !active) MaterialTheme.colorScheme.outlineVariant else Color.Transparent, CircleShape), contentAlignment = Alignment.Center) {
@@ -61,7 +64,7 @@ fun MonthCalendar(selected: LocalDate?, enabled: Boolean, markedDates: Set<Local
                 } }
             }
         }
-        if (selected != null) TextButton(onClick = onClear, enabled = enabled, modifier = Modifier.align(Alignment.End)) { Text("清除日期") }
+        if (selected != null) TextButton(onClick = onClear, enabled = enabled, modifier = Modifier.align(Alignment.End)) { Text(t(R.string.clear_date)) }
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(thickness = .5.dp)
     }

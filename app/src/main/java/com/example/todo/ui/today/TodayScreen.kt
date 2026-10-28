@@ -1,5 +1,8 @@
 package com.example.todo.ui.today
 
+import com.example.todo.R
+import com.example.todo.i18n.t
+import com.example.todo.i18n.appLocale
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -43,26 +46,26 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
     var query by rememberSaveable { mutableStateOf("") }
     val agenda = remember(state.todos, selected, today, zone) { partitionAgenda(state.todos, selected, today, zone) }
     Scaffold(
-        floatingActionButton = { AnimatedVisibility(!adding, enter = fadeIn(), exit = fadeOut()) { FloatingActionButton(onClick = onAdd, shape = CircleShape, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(56.dp)) { Icon(LineIcons.Add, "添加待办") } } },
+        floatingActionButton = { AnimatedVisibility(!adding, enter = fadeIn(), exit = fadeOut()) { FloatingActionButton(onClick = onAdd, shape = CircleShape, containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(56.dp)) { Icon(LineIcons.Add, t(R.string.add_task)) } } },
         topBar = { Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = if (all) onBack else onSettings) { Icon(if (all) LineIcons.Back else LineIcons.Menu, if (all) "返回" else "设置", modifier = Modifier.size(22.dp)) }
+            IconButton(onClick = if (all) onBack else onSettings) { Icon(if (all) LineIcons.Back else LineIcons.Menu, if (all) t(R.string.back) else t(R.string.settings), modifier = Modifier.size(22.dp)) }
             Spacer(Modifier.weight(1f))
-            if (all) IconButton(onClick = onSettings) { Icon(LineIcons.Settings, "设置") }
-            else TextButton(onClick = onAll, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) { Text("全部待办", style = MaterialTheme.typography.bodyMedium) }
+            if (all) IconButton(onClick = onSettings) { Icon(LineIcons.Settings, t(R.string.settings)) }
+            else TextButton(onClick = onAll, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)) { Text(t(R.string.all_tasks), style = MaterialTheme.typography.bodyMedium) }
         } }
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(start = pagePadding, end = pagePadding, bottom = 100.dp)) {
             item {
-                Text(if (all) "全部待办" else if (selected == today) "今天" else "日程", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 14.dp))
-                Text(selected.format(DateTimeFormatter.ofPattern("M月d日 · EEEE", java.util.Locale.CHINA)),
+                Text(if (all) t(R.string.all_tasks) else if (selected == today) t(R.string.today) else t(R.string.schedule), style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(top = 14.dp))
+                Text(selected.format(DateTimeFormatter.ofPattern(t(R.string.mmm_d_eeee), appLocale())),
                     style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                 if (!all) {
                     Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (selected != today) TextButton(onClick = { selectedValue = today.toString() }, contentPadding = PaddingValues(0.dp)) { Text("回到今天") }
-                        else Text("已完成 ${agenda.completed.size} / ${agenda.scheduled.size + agenda.completed.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (selected != today) TextButton(onClick = { selectedValue = today.toString() }, contentPadding = PaddingValues(0.dp)) { Text(t(R.string.back_to_today)) }
+                        else Text(t(R.string.completed_count, agenda.completed.size, agenda.scheduled.size + agenda.completed.size), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { selectedValue = selected.minusWeeks(1).toString() }) { Icon(LineIcons.Back, "上一周", Modifier.size(18.dp)) }
-                        IconButton(onClick = { selectedValue = selected.plusWeeks(1).toString() }) { Icon(LineIcons.Forward, "下一周", Modifier.size(18.dp)) }
+                        IconButton(onClick = { selectedValue = selected.minusWeeks(1).toString() }) { Icon(LineIcons.Back, t(R.string.previous_week), Modifier.size(18.dp)) }
+                        IconButton(onClick = { selectedValue = selected.plusWeeks(1).toString() }) { Icon(LineIcons.Forward, t(R.string.next_week), Modifier.size(18.dp)) }
                     }
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         val cell = maxOf(48.dp, maxWidth / 7)
@@ -75,7 +78,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                                     .border(1.dp, if (active) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(28.dp))
                                     .selectableDate(active, date, count) { selectedValue = date.toString() }.padding(vertical = 10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(listOf("一", "二", "三", "四", "五", "六", "日")[date.dayOfWeek.value - 1], style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(listOf(t(R.string.mon), t(R.string.tue), t(R.string.wed), t(R.string.thu), t(R.string.fri), t(R.string.sat), t(R.string.sun))[date.dayOfWeek.value - 1], style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text("${date.dayOfMonth}", style = MaterialTheme.typography.titleLarge)
                                     val dotColor = MaterialTheme.colorScheme.primary
                                     Canvas(Modifier.size(width = 18.dp, height = 5.dp)) {
@@ -85,7 +88,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                             }
                         }
                     }
-                } else OutlinedTextField(query, { query = it }, label = { Text("搜索标题、备注、地点") }, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), singleLine = true)
+                } else OutlinedTextField(query, { query = it }, label = { Text(t(R.string.search_titles_notes_and_locations)) }, modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), singleLine = true)
                 HorizontalDivider()
             }
             if (state.loading) item { NoticeSkeleton() }
@@ -98,19 +101,19 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
             } else {
                 fun section(label: String, todos: List<TodoEntity>) {
                     if (todos.isNotEmpty()) {
-                        item(key = label) { Text(label, style = MaterialTheme.typography.titleSmall, color = if (label == "已逾期") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)) }
+                        item(key = label) { Text(label, style = MaterialTheme.typography.titleSmall, color = if (label == t(R.string.overdue)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)) }
                         items(todos, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
                     }
                 }
-                section("已逾期", agenda.overdue)
-                section("全天", agenda.scheduled.filter { it.allDay })
-                section("日程", agenda.scheduled.filter { !it.allDay })
-                section("无时间", agenda.undated)
+                section(t(R.string.overdue), agenda.overdue)
+                section(t(R.string.all_day), agenda.scheduled.filter { it.allDay })
+                section(t(R.string.schedule), agenda.scheduled.filter { !it.allDay })
+                section(t(R.string.unscheduled), agenda.undated)
                 if (agenda.completed.isNotEmpty()) {
                     item { Row(Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp).clickable { showCompleted = !showCompleted }
-                        .semantics { contentDescription = "${if (showCompleted) "收起" else "展开"}已完成 · ${agenda.completed.size}" }, verticalAlignment = Alignment.CenterVertically) {
+                        .semantics { contentDescription = t(if (showCompleted) R.string.collapse_completed else R.string.expand_completed, agenda.completed.size) }, verticalAlignment = Alignment.CenterVertically) {
                         Icon(LineIcons.Down, null, Modifier.size(18.dp).rotate(if (showCompleted) 180f else 0f), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("已完成", Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium)
+                        Text(t(R.string.completed), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium)
                         Text("${agenda.completed.size}", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } }
                     if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
@@ -122,7 +125,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
 }
 
 private fun Modifier.selectableDate(active: Boolean, date: LocalDate, count: Int, click: () -> Unit) =
-    this.semantics { selected = active; contentDescription = "$date，$count 项待办" }.clickable(onClick = click)
+    this.semantics { selected = active; contentDescription = t(R.string.date_task_count, date, count) }.clickable(onClick = click)
 
 @Composable
 private fun EmptyAgenda() {
@@ -133,7 +136,7 @@ private fun EmptyAgenda() {
             drawLine(color, androidx.compose.ui.geometry.Offset(size.width * .35f, size.height * .48f), androidx.compose.ui.geometry.Offset(size.width * .46f, size.height * .6f), 1.5.dp.toPx())
             drawLine(color, androidx.compose.ui.geometry.Offset(size.width * .46f, size.height * .6f), androidx.compose.ui.geometry.Offset(size.width * .68f, size.height * .35f), 1.5.dp.toPx())
         }
-        Text("给今天留一点从容", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-        Text("点击 +，记下下一件事", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(t(R.string.make_room_for_today), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        Text(t(R.string.tap_to_add_your_next_task), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

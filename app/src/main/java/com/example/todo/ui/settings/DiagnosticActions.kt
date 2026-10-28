@@ -1,5 +1,7 @@
 package com.example.todo.ui.settings
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
@@ -23,22 +25,22 @@ fun DiagnosticActions(logs: CrashLogs) {
                     val report = logs.exportText()
                     requireNotNull(context.contentResolver.openOutputStream(uri, "wt")).bufferedWriter().use { it.write(report) }
                 }
-                message = "日志已导出"
+                message = t(R.string.logs_exported)
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { message = "导出失败，请重新选择保存位置" }
+            catch (_: Exception) { message = t(R.string.could_not_export_choose_another_location) }
             finally { busy = false }
         }
     }
     HorizontalDivider()
-    Text("诊断日志", style = MaterialTheme.typography.titleMedium)
-    Text("仅保留最近 5 次崩溃的异常类型和调用位置，不记录待办内容、通知原文、接口地址或密钥。不会自动上传。", style = MaterialTheme.typography.bodySmall)
-    TextButton(enabled = !busy, onClick = { export.launch("todo-diagnostics-${LocalDate.now()}.txt") }) { Text("导出日志") }
+    Text(t(R.string.diagnostic_logs), style = MaterialTheme.typography.titleMedium)
+    Text(t(R.string.only_the_exception_type_and_code_location_of_the_last_5_crashes_a), style = MaterialTheme.typography.bodySmall)
+    TextButton(enabled = !busy, onClick = { export.launch("todo-diagnostics-${LocalDate.now()}.txt") }) { Text(t(R.string.export_logs)) }
     TextButton(enabled = !busy, onClick = { scope.launch {
         busy = true
-        try { withContext(Dispatchers.IO) { logs.clear() }; message = "本地诊断日志已清除" }
+        try { withContext(Dispatchers.IO) { logs.clear() }; message = t(R.string.local_diagnostic_logs_cleared) }
         catch (e: CancellationException) { throw e }
-        catch (_: Exception) { message = "清除失败，请重试" }
+        catch (_: Exception) { message = t(R.string.could_not_clear_try_again) }
         finally { busy = false }
-    } }) { Text("清除诊断日志") }
+    } }) { Text(t(R.string.clear_diagnostic_logs)) }
     message?.let { Text(it) }
 }

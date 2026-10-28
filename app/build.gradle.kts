@@ -16,15 +16,17 @@ android {
         applicationId = "com.example.todo"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.3.1"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionCode = 5
+        versionName = "0.4.0"
+        testInstrumentationRunner = "com.example.todo.LocalizedTestRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures { compose = true }
+    // Both languages must remain available offline, including future app bundles.
+    bundle { language { enableSplit = false } }
     signingConfigs {
         if (signingFile.isFile) create("release") {
             listOf("storeFile", "storePassword", "keyAlias", "keyPassword").forEach {
@@ -64,6 +66,7 @@ android {
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.1")
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.material3:material3")

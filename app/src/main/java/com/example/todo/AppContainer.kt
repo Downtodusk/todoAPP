@@ -1,5 +1,7 @@
 package com.example.todo
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.content.Context
 import com.example.todo.data.local.TodoDatabase
 import com.example.todo.data.repo.TodoRepository
@@ -31,11 +33,11 @@ class AppContainer(context: Context) {
     val todos by lazy { TodoRepository(database, onChanged = { oldIds ->
         try { reschedule.run(oldIds, catchUp = false); notifications.prune(database); reminderIssue.value = null }
         catch (e: CancellationException) { throw e }
-        catch (_: Exception) { reminderIssue.value = "待办已保存，提醒调度失败，请打开提醒自检" }
+        catch (_: Exception) { reminderIssue.value = t(R.string.task_saved_but_reminder_scheduling_failed_open_reminder_check) }
     }) }
     fun refreshReminders() { scope.launch {
         try { reschedule.run(); reminderIssue.value = null }
         catch (e: CancellationException) { throw e }
-        catch (_: Exception) { reminderIssue.value = "提醒恢复失败，请在自检页重试" }
+        catch (_: Exception) { reminderIssue.value = t(R.string.could_not_restore_reminders_try_again_in_reminder_check) }
     } }
 }

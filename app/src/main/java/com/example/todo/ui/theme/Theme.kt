@@ -24,7 +24,7 @@ fun TodoTheme(settings: UserSettings, content: @Composable () -> Unit) {
     val reduced = settings.reduceMotion ?: LocalContext.current.getSystemService(ActivityManager::class.java).isLowRamDevice
     val dark = when (settings.theme) { "LIGHT" -> false; "DARK" -> true; else -> isSystemInDarkTheme() }
     ApplySystemBarAppearance(dark)
-    val colors = when {
+    val baseColors = when {
         settings.dynamicColor && Build.VERSION.SDK_INT >= 31 -> if (dark) dynamicDarkColorScheme(LocalContext.current) else dynamicLightColorScheme(LocalContext.current)
         dark -> darkColorScheme(primary = Color(0xFFEDB29C), onPrimary = Color(0xFF4B2619),
             background = Color(0xFF211F1C), surface = Color(0xFF211F1C), onBackground = Color(0xFFE9E2D8), onSurface = Color(0xFFE9E2D8),
@@ -40,6 +40,13 @@ fun TodoTheme(settings: UserSettings, content: @Composable () -> Unit) {
             outline = Color(0xFF8E8579), outlineVariant = WarmLine, surfaceVariant = Color(0xFFF1EDE3),
             surfaceContainerLowest = WarmWhite, surfaceContainerLow = Color(0xFFF7F3EB), surfaceContainer = Color(0xFFF3EEE4),
             surfaceContainerHigh = Color(0xFFEFE8DD), surfaceContainerHighest = Color(0xFFE9E1D4))
+    }
+    val colors = if (settings.dynamicColor && Build.VERSION.SDK_INT >= 31 || settings.accentColor == 0xFFA8583D) baseColors else {
+        val accent = accentColors(settings.accentColor.toInt(), dark)
+        baseColors.copy(primary = Color(accent.primary), surfaceTint = Color(accent.primary), onPrimary = Color(accent.onPrimary),
+            primaryContainer = Color(accent.container), onPrimaryContainer = Color(accent.onContainer),
+            secondary = Color(accent.primary), onSecondary = Color(accent.onPrimary),
+            secondaryContainer = Color(accent.container), onSecondaryContainer = Color(accent.onContainer))
     }
     val fonts = AppFonts.get(LocalContext.current.resources)
     val defaults = Typography()

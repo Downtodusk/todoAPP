@@ -1,12 +1,16 @@
 package com.example.todo.ui.settings
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import com.example.todo.ui.components.WheelTimePicker
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import com.example.todo.data.settings.*
 import com.example.todo.ui.components.LineIcons
 import com.example.todo.ui.theme.LocalReducedMotion
@@ -19,31 +23,33 @@ fun SettingsScreen(settings: UserSettings, store: SettingsStore, onBack: () -> U
     var error by remember { mutableStateOf(false) }
     var timeDialog by remember { mutableStateOf(false) }
     fun change(block: suspend () -> Unit) { scope.launch { try { block() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { error = true } } }
-    Scaffold(topBar = { TopAppBar(title = { Text("设置") }, navigationIcon = { IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(t(R.string.settings)) }, navigationIcon = { IconButton(onClick = onBack) { Icon(LineIcons.Back, t(R.string.back)) } }) }) { padding ->
         Column(Modifier.padding(padding).padding(horizontal = 20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("外观", style = MaterialTheme.typography.titleMedium)
-            listOf("SYSTEM" to "跟随系统", "LIGHT" to "浅色", "DARK" to "深色").forEach { (value, label) ->
-                Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(settings.theme == value, onClick = { change { store.theme(value) } }); Text(label) }
+            LanguageSetting()
+            Text(t(R.string.appearance), style = MaterialTheme.typography.titleMedium)
+            listOf("SYSTEM" to t(R.string.system_default), "LIGHT" to t(R.string.light), "DARK" to t(R.string.dark)).forEach { (value, label) ->
+                Row(verticalAlignment = Alignment.CenterVertically) { RadioButton(settings.theme == value, modifier = Modifier.testTag("theme-$value"), onClick = { change { store.theme(value) } }); Text(label) }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) { Text("动态取色", Modifier.weight(1f)); Switch(settings.dynamicColor, onCheckedChange = { change { store.dynamic(it) } }) }
-            Row(verticalAlignment = Alignment.CenterVertically) { Text("动画降级", Modifier.weight(1f)); Switch(LocalReducedMotion.current, onCheckedChange = { change { store.motion(it) } }) }
-            TextButton(onClick = { change { store.motion(null) } }) { Text("动画跟随设备性能（自动）") }
+            PaletteSettings(settings) { color -> change { store.accent(color) } }
+            Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.wallpaper_colors), Modifier.weight(1f)); Switch(settings.dynamicColor, enabled = android.os.Build.VERSION.SDK_INT >= 31, onCheckedChange = { change { store.dynamic(it) } }) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.reduce_motion), Modifier.weight(1f)); Switch(LocalReducedMotion.current, onCheckedChange = { change { store.motion(it) } }) }
+            TextButton(onClick = { change { store.motion(null) } }) { Text(t(R.string.motion_follows_device_performance_automatic)) }
             HorizontalDivider()
-            TextButton(onClick = onReminder) { Text("提醒自检") }
-            TextButton(onClick = { timeDialog = true }) { Text("全天提醒时间：%02d:%02d".format(settings.allDayMinute / 60, settings.allDayMinute % 60)) }
-            TextButton(onClick = onAi) { Text("AI 通知识别") }
-            TextButton(onClick = onAiSettings) { Text("AI 服务与密钥") }
-            Row(verticalAlignment = Alignment.CenterVertically) { Text("保存导入通知原文", Modifier.weight(1f)); Switch(settings.saveSource, onCheckedChange = { change { store.saveSource(it) } }) }
-            Text("默认不保存原文。开启后，仅保存在对应待办中。", style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = onReminder) { Text(t(R.string.reminder_check)) }
+            TextButton(onClick = { timeDialog = true }) { Text(t(R.string.all_day_reminder_time_02d_02d).format(settings.allDayMinute / 60, settings.allDayMinute % 60)) }
+            TextButton(onClick = onAi) { Text(t(R.string.ai_text_import)) }
+            TextButton(onClick = onAiSettings) { Text(t(R.string.ai_service_and_key)) }
+            Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.keep_imported_source_text), Modifier.weight(1f)); Switch(settings.saveSource, onCheckedChange = { change { store.saveSource(it) } }) }
+            Text(t(R.string.off_by_default_when_enabled_source_text_is_stored_only_with_the_r), style = MaterialTheme.typography.bodySmall)
             crashLogs?.let { DiagnosticActions(it) }
-            Text("待办保存在本机 · 无账号与同步", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (error) Text("设置保存失败，请重试", color = MaterialTheme.colorScheme.error)
+            Text(t(R.string.tasks_stay_on_this_device_no_account_or_sync), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (error) Text(t(R.string.could_not_save_settings_try_again), color = MaterialTheme.colorScheme.error)
         }
     }
     if (timeDialog) {
         val picker = rememberTimePickerState(initialHour = settings.allDayMinute / 60, initialMinute = settings.allDayMinute % 60, is24Hour = true)
-        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text("默认全天提醒时间") }, text = { TimeInput(picker) },
-            confirmButton = { TextButton(onClick = { change { store.allDay(picker.hour * 60 + picker.minute) }; timeDialog = false }) { Text("确定") } },
-            dismissButton = { TextButton(onClick = { timeDialog = false }) { Text("取消") } })
+        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text(t(R.string.default_all_day_reminder_time)) }, text = { WheelTimePicker(picker.hour, picker.minute, { picker.hour = it }, { picker.minute = it }) },
+            confirmButton = { TextButton(onClick = { change { store.allDay(picker.hour * 60 + picker.minute) }; timeDialog = false }) { Text(t(R.string.ok)) } },
+            dismissButton = { TextButton(onClick = { timeDialog = false }) { Text(t(R.string.cancel)) } })
     }
 }

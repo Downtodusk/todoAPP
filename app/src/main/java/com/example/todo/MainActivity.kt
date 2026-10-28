@@ -3,7 +3,7 @@ package com.example.todo
 import android.os.Bundle
 import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
@@ -14,13 +14,15 @@ import com.example.todo.ui.theme.TodoTheme
 
 data class SharedNotice(val text: String, val token: Long = System.nanoTime())
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val sharedNotice = MutableStateFlow<SharedNotice?>(null)
     private val openTodo = MutableStateFlow<Long?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.example.todo.i18n.AppText.refresh(this)
         enableEdgeToEdge()
         val container = (application as App).container
+        container.notifications.createChannel()
         if (savedInstanceState == null) readIntent(intent)
         setContent {
             val settings by container.settings.settings.collectAsStateWithLifecycle(UserSettings())

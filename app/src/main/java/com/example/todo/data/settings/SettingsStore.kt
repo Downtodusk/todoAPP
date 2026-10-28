@@ -1,5 +1,7 @@
 package com.example.todo.data.settings
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.content.Context
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
@@ -17,13 +19,14 @@ data class UserSettings(
     val allDayMinute: Int = 540,
     val saveSource: Boolean = false,
     val reminderMode: ReminderMode = ReminderMode.STANDARD,
+    val accentColor: Long = 0xFFA8583D,
 )
 
 class SettingsStore(context: Context) {
     private val store = context.settingsDataStore
     val settings = store.data.catch { if (it is IOException) emit(emptyPreferences()) else throw it }.map {
         UserSettings(it[Theme] ?: "SYSTEM", it[Dynamic] ?: false, it[Motion], it[AllDay] ?: 540, it[SaveSource] ?: false,
-            ReminderMode.entries.firstOrNull { mode -> mode.name == it[Reminder] } ?: ReminderMode.STANDARD)
+            ReminderMode.entries.firstOrNull { mode -> mode.name == it[Reminder] } ?: ReminderMode.STANDARD, it[Accent] ?: 0xFFA8583D)
     }
     val ai = store.data.map {
         AiConfiguration(AiProvider.entries.firstOrNull { provider -> provider.name == it[Provider] } ?: AiProvider.OPENAI_COMPAT,
@@ -33,11 +36,11 @@ class SettingsStore(context: Context) {
     suspend fun saveAi(input: AiConfiguration, newKey: String?, secrets: SecretStore) {
         val config = input.validated()
         val trimmed = newKey?.trim()?.takeIf { it.isNotEmpty() }
-        require(trimmed == null || trimmed.none { it.isISOControl() }) { "密钥不能包含换行或控制字符" }
+        require(trimmed == null || trimmed.none { it.isISOControl() }) { t(R.string.keys_cannot_contain_line_breaks_or_control_characters) }
         val encrypted = withContext(Dispatchers.IO) { trimmed?.let { secrets.seal(it, config.keyBinding()) } }
         store.edit {
             if (encrypted == null) require(it[Provider] == config.provider.name && it[BaseUrl] == config.baseUrl && !it[EncryptedKey].isNullOrBlank()) {
-                "首次配置或更换服务地址后，请填写 API Key"
+                t(R.string.enter_an_api_key_when_configuring_or_changing_the_service_address)
             }
             it[Provider] = config.provider.name; it[BaseUrl] = config.baseUrl; it[Model] = config.model; it[Timeout] = config.timeoutSeconds
             if (encrypted != null) { it[EncryptedKey] = encrypted; it[KeyHint] = trimmed!!.takeLast(4) }
@@ -53,12 +56,17 @@ class SettingsStore(context: Context) {
     suspend fun aiConsent(granted: Boolean) { store.edit { it[Consent] = granted } }
     suspend fun clearAiKey() { store.edit { it.remove(EncryptedKey); it.remove(KeyHint) } }
     suspend fun theme(value: String) { require(value in listOf("SYSTEM", "LIGHT", "DARK")); store.edit { it[Theme] = value } }
+    suspend fun accent(color: Long) {
+        require(color in 0xFF000000..0xFFFFFFFF)
+        store.edit { it[Accent] = color; it[Dynamic] = false }
+    }
     suspend fun dynamic(value: Boolean) { store.edit { it[Dynamic] = value } }
     suspend fun motion(value: Boolean?) { store.edit { if (value == null) it.remove(Motion) else it[Motion] = value } }
     suspend fun allDay(minute: Int) { require(minute in 0..1439); store.edit { it[AllDay] = minute } }
     suspend fun saveSource(value: Boolean) { store.edit { it[SaveSource] = value } }
     suspend fun reminderMode(value: ReminderMode) { store.edit { it[Reminder] = value.name } }
     private companion object {
+        val Accent = longPreferencesKey("accent_color")
         val Theme = stringPreferencesKey("theme")
         val Dynamic = booleanPreferencesKey("dynamic_color")
         val Motion = booleanPreferencesKey("reduce_motion")

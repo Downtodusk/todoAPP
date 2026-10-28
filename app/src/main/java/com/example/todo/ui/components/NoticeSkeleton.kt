@@ -1,5 +1,7 @@
 package com.example.todo.ui.components
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,7 +29,7 @@ fun NoticeSkeleton(modifier: Modifier = Modifier) {
     val brush = Brush.linearGradient(listOf(base, MaterialTheme.colorScheme.surface, base),
         Offset(shift, 0f), Offset(shift + 400f, 250f))
     Column(modifier.fillMaxWidth().padding(vertical = 20.dp).semantics {
-        contentDescription = "正在读取内容"; liveRegion = LiveRegionMode.Polite
+        contentDescription = t(R.string.reading_content); liveRegion = LiveRegionMode.Polite
     }, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         listOf(.75f, 1f, .55f).forEach { fraction ->
             Spacer(Modifier.fillMaxWidth(fraction).height(20.dp).background(brush, RoundedCornerShape(8.dp)))

@@ -1,5 +1,7 @@
 package com.example.todo.ui.ai
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todo.ai.*
@@ -38,7 +40,7 @@ class AiImportViewModel(private val parser: NoticeParseRepository, private val t
                         }) }
                 }, onFailure = { error -> mutable.update { it.copy(loading = false, error = error.aiMessage()) } })
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { mutable.update { it.copy(loading = false, error = "识别未完成，请重试") } }
+            catch (_: Exception) { mutable.update { it.copy(loading = false, error = t(R.string.import_did_not_finish_try_again)) } }
         }
     }
     fun cancel() { parsing?.cancel(); mutable.update { it.copy(loading = false) } }
@@ -46,7 +48,7 @@ class AiImportViewModel(private val parser: NoticeParseRepository, private val t
         if (mutable.value.saving || mutable.value.added > 0) return
         val selected = mutable.value.drafts.filter { it.selected }
         if (selected.isEmpty()) return
-        if (selected.any { it.title.trim().isEmpty() }) { mutable.update { it.copy(error = "请为选中的待办填写标题") }; return }
+        if (selected.any { it.title.trim().isEmpty() }) { mutable.update { it.copy(error = t(R.string.enter_a_title_for_each_selected_task)) }; return }
         mutable.update { it.copy(saving = true, error = null) }
         val source = prepareNotice(mutable.value.input).text
         viewModelScope.launch {
@@ -69,7 +71,7 @@ class AiImportViewModel(private val parser: NoticeParseRepository, private val t
                 todos.importBatch(items, zone)
                 mutable.update { it.copy(saving = false, added = items.size, addedWithReminder = items.any { item -> item.second.isNotEmpty() }) }
             } catch (e: CancellationException) { throw e }
-            catch (_: Exception) { mutable.update { it.copy(saving = false, error = "保存未完成，请返回列表核对后重试") } }
+            catch (_: Exception) { mutable.update { it.copy(saving = false, error = t(R.string.saving_did_not_finish_check_the_task_list_before_retrying)) } }
         }
     }
     fun consumed() { mutable.value = ImportState() }

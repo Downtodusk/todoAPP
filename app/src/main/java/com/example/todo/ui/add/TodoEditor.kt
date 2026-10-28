@@ -1,5 +1,7 @@
 package com.example.todo.ui.add
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import com.example.todo.ui.components.WheelTimePicker
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -74,57 +77,57 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
     Column(modifier.fillMaxSize().imePadding()) {
     Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = pagePadding), verticalArrangement = Arrangement.spacedBy(0.dp)) {
         if (quick) Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("记下一件事", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            TextButton(onClick = onAi, enabled = !saving) { Text("粘贴通知") }
+            Text(t(R.string.a_new_task), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            TextButton(onClick = onAi, enabled = !saving) { Text(t(R.string.paste_text_188)) }
         }
         MonthCalendar(date?.let(LocalDate::parse), !saving, markedDates,
             onMonthClick = { dateDialog = true },
             onClear = { date = null; time = null; repeat = null }) { date = it.toString() }
         Spacer(Modifier.height(18.dp))
-        OutlinedTextField(title, { if (it.length <= 200) title = it }, label = { Text("标题") },
+        OutlinedTextField(title, { if (it.length <= 200) title = it }, label = { Text(t(R.string.title)) },
             textStyle = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, lineHeight = 30.sp),
             modifier = Modifier.fillMaxWidth().testTag("todo-title").focusRequester(focus), enabled = !saving,
             shape = RoundedCornerShape(4.dp), maxLines = 3,
             colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { save() }))
         Spacer(Modifier.height(12.dp))
-        EditorField(LineIcons.Clock, "时间", time?.take(5) ?: if (date != null) "全天" else "未设置", !saving) { timeDialog = true }
-        EditorField(LineIcons.Location, "地点", location.ifBlank { "未设置" }, !saving) { textDraft = location; textDialog = "地点" }
-        EditorField(LineIcons.Note, "备注", note.ifBlank { "未填写" }, !saving) { textDraft = note; textDialog = "备注" }
+        EditorField(LineIcons.Clock, t(R.string.time), time?.take(5) ?: if (date != null) t(R.string.all_day) else t(R.string.not_set), !saving) { timeDialog = true }
+        EditorField(LineIcons.Location, t(R.string.location), location.ifBlank { t(R.string.not_set) }, !saving) { textDraft = location; textDialog = "location" }
+        EditorField(LineIcons.Note, t(R.string.notes), note.ifBlank { t(R.string.empty) }, !saving) { textDraft = note; textDialog = "note" }
         if (date != null) {
-            EditorField(LineIcons.Bell, "提醒", when { !remind -> "关闭"; time == null -> "%02d:%02d".format(defaultMinute / 60, defaultMinute % 60); offset == 0L -> "准时"; else -> "提前 $offset 分钟" }, !saving) { reminderDialog = true }
-            EditorField(LineIcons.Repeat, "重复", when { repeat == "DAILY" -> "每天"; repeat == "MONTHLY" -> "每月"; repeat?.startsWith("WEEKLY:") == true -> "每周 " + repeat!!.substringAfter(':').split(',').joinToString("、") { listOf("一", "二", "三", "四", "五", "六", "日")[it.toInt() - 1] }; else -> "不重复" }, !saving) { repeatDialog = true }
+            EditorField(LineIcons.Bell, t(R.string.reminder), when { !remind -> t(R.string.off_193); time == null -> "%02d:%02d".format(defaultMinute / 60, defaultMinute % 60); offset == 0L -> t(R.string.on_time); else -> t(R.string.reminder_early, offset) }, !saving) { reminderDialog = true }
+            EditorField(LineIcons.Repeat, t(R.string.repeat), when { repeat == "DAILY" -> t(R.string.daily); repeat == "MONTHLY" -> t(R.string.monthly); repeat?.startsWith("WEEKLY:") == true -> t(R.string.weekly) + repeat!!.substringAfter(':').split(',').joinToString(t(R.string.weekday_separator)) { listOf(t(R.string.mon), t(R.string.tue), t(R.string.wed), t(R.string.thu), t(R.string.fri), t(R.string.sat), t(R.string.sun))[it.toInt() - 1] }; else -> t(R.string.does_not_repeat) }, !saving) { repeatDialog = true }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
         Spacer(Modifier.height(20.dp))
     }
         Button(onClick = save, enabled = title.trim().isNotEmpty() && !saving, shape = RoundedCornerShape(5.dp),
             modifier = Modifier.fillMaxWidth().padding(horizontal = pagePadding, vertical = 16.dp).heightIn(min = 54.dp)) {
-            Text(if (saving) "正在保存…" else "保存", style = MaterialTheme.typography.titleLarge)
+            Text(if (saving) t(R.string.saving) else t(R.string.save), style = MaterialTheme.typography.titleLarge)
         }
     }
-    if (textDialog != null) AlertDialog(onDismissRequest = { textDialog = null }, title = { Text(textDialog!!) },
-        text = { OutlinedTextField(textDraft, { textDraft = it }, label = { Text(if (textDialog == "地点") "地点（可选）" else "备注（可选）") },
-            modifier = Modifier.fillMaxWidth(), minLines = if (textDialog == "备注") 4 else 1, maxLines = 8) },
-        confirmButton = { TextButton(onClick = { if (textDialog == "地点") location = textDraft else note = textDraft; textDialog = null }) { Text("确定") } },
-        dismissButton = { TextButton(onClick = { textDialog = null }) { Text("取消") } })
-    if (reminderDialog) AlertDialog(onDismissRequest = { reminderDialog = false }, title = { Text("提醒") }, text = {
+    if (textDialog != null) AlertDialog(onDismissRequest = { textDialog = null }, title = { Text(if (textDialog == "location") t(R.string.location) else t(R.string.notes)) },
+        text = { OutlinedTextField(textDraft, { textDraft = it }, label = { Text(if (textDialog == "location") t(R.string.location_optional) else t(R.string.notes_optional)) },
+            modifier = Modifier.fillMaxWidth(), minLines = if (textDialog == "note") 4 else 1, maxLines = 8) },
+        confirmButton = { TextButton(onClick = { if (textDialog == "location") location = textDraft else note = textDraft; textDialog = null }) { Text(t(R.string.ok)) } },
+        dismissButton = { TextButton(onClick = { textDialog = null }) { Text(t(R.string.cancel)) } })
+    if (reminderDialog) AlertDialog(onDismissRequest = { reminderDialog = false }, title = { Text(t(R.string.reminder)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState())) {
-            Row(verticalAlignment = Alignment.CenterVertically) { Text("启用提醒", Modifier.weight(1f)); Switch(remind, { remind = it; reminderTouched = true }) }
-            if (remind && time == null) Text("全天提醒：%02d:%02d，可在设置中修改".format(defaultMinute / 60, defaultMinute % 60))
+            Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.enable_reminder), Modifier.weight(1f)); Switch(remind, { remind = it; reminderTouched = true }) }
+            if (remind && time == null) Text(t(R.string.all_day_reminder_02d_02d_change_this_in_settings).format(defaultMinute / 60, defaultMinute % 60))
             if (remind && time != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(0L to "准时", 5L to "提前5分钟", 10L to "提前10分钟", 30L to "提前30分钟", 60L to "提前1小时", 1440L to "提前1天").forEach { (minutes, label) ->
+                listOf(0L to t(R.string.on_time), 5L to t(R.string.before_5_min_before), 10L to t(R.string.before_10_min_before), 30L to t(R.string.before_30_min_before), 60L to t(R.string.before_1_hour_before), 1440L to t(R.string.before_1_day_before)).forEach { (minutes, label) ->
                     FilterChip(selected = offset == minutes, onClick = { offset = minutes; reminderTouched = true }, label = { Text(label) })
                 }
-                InputChip(selected = offset !in listOf(0L, 5L, 10L, 30L, 60L, 1440L), onClick = { customText = offset.toString(); customOffset = true }, label = { Text("自定义") })
+                InputChip(selected = offset !in listOf(0L, 5L, 10L, 30L, 60L, 1440L), onClick = { customText = offset.toString(); customOffset = true }, label = { Text(t(R.string.custom)) })
             }
         }
-    }, confirmButton = { TextButton(onClick = { reminderDialog = false }) { Text("完成") } })
-    if (repeatDialog && date != null) AlertDialog(onDismissRequest = { repeatDialog = false }, title = { Text("重复") }, text = {
+    }, confirmButton = { TextButton(onClick = { reminderDialog = false }) { Text(t(R.string.complete)) } })
+    if (repeatDialog && date != null) AlertDialog(onDismissRequest = { repeatDialog = false }, title = { Text(t(R.string.repeat)) }, text = {
         Column {
-            listOf(null to "不重复", "DAILY" to "每天", "WEEKLY:${LocalDate.parse(date).dayOfWeek.value}" to "每周", "MONTHLY" to "每月").forEach { (rule, label) ->
+            listOf(null to t(R.string.does_not_repeat), "DAILY" to t(R.string.daily), "WEEKLY:${LocalDate.parse(date).dayOfWeek.value}" to t(R.string.weekly_211), "MONTHLY" to t(R.string.monthly)).forEach { (rule, label) ->
                 Row(Modifier.fillMaxWidth().clickable { repeat = rule }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(if (label == "每周") repeat?.startsWith("WEEKLY:") == true else repeat == rule, onClick = { repeat = rule }); Text(label)
+                    RadioButton(if (label == t(R.string.weekly_211)) repeat?.startsWith("WEEKLY:") == true else repeat == rule, onClick = { repeat = rule }); Text(label)
                 }
             }
             if (repeat?.startsWith("WEEKLY:") == true) FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -132,26 +135,26 @@ fun TodoEditor(original: TodoEntity?, saving: Boolean, error: String?, onSave: (
                 (1..7).forEach { day -> FilterChip(selected = day in days, onClick = {
                     val updated = if (day in days && days.size > 1) days - day else days + day
                     repeat = "WEEKLY:" + updated.sorted().joinToString(",")
-                }, label = { Text(listOf("一", "二", "三", "四", "五", "六", "日")[day - 1]) }) }
+                }, label = { Text(listOf(t(R.string.mon), t(R.string.tue), t(R.string.wed), t(R.string.thu), t(R.string.fri), t(R.string.sat), t(R.string.sun))[day - 1]) }) }
             }
         }
-    }, confirmButton = { TextButton(onClick = { repeatDialog = false }) { Text("完成") } })
-    if (customOffset) AlertDialog(onDismissRequest = { customOffset = false }, title = { Text("提前多少分钟提醒") },
-        text = { OutlinedTextField(customText, { customText = it.filter(Char::isDigit).take(6) }, label = { Text("分钟，最多 525600") }, keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)) },
-        confirmButton = { TextButton(enabled = customText.toLongOrNull() in 0L..525600L, onClick = { offset = customText.toLong(); reminderTouched = true; customOffset = false }) { Text("确定") } },
-        dismissButton = { TextButton(onClick = { customOffset = false }) { Text("取消") } })
+    }, confirmButton = { TextButton(onClick = { repeatDialog = false }) { Text(t(R.string.complete)) } })
+    if (customOffset) AlertDialog(onDismissRequest = { customOffset = false }, title = { Text(t(R.string.minutes_before_the_task)) },
+        text = { OutlinedTextField(customText, { customText = it.filter(Char::isDigit).take(6) }, label = { Text(t(R.string.minutes_up_to_525600)) }, keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number)) },
+        confirmButton = { TextButton(enabled = customText.toLongOrNull() in 0L..525600L, onClick = { offset = customText.toLong(); reminderTouched = true; customOffset = false }) { Text(t(R.string.ok)) } },
+        dismissButton = { TextButton(onClick = { customOffset = false }) { Text(t(R.string.cancel)) } })
     if (dateDialog) {
         val picker = rememberDatePickerState(initialSelectedDateMillis = (date?.let(LocalDate::parse) ?: LocalDate.now()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(onDismissRequest = { dateDialog = false }, confirmButton = { TextButton(onClick = {
             picker.selectedDateMillis?.let { date = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString() }; dateDialog = false
-        }) { Text("确定") } }, dismissButton = { Row { TextButton(onClick = { date = null; time = null; repeat = null; dateDialog = false }) { Text("清除日期") }; TextButton(onClick = { dateDialog = false }) { Text("取消") } } }) { DatePicker(picker) }
+        }) { Text(t(R.string.ok)) } }, dismissButton = { Row { TextButton(onClick = { date = null; time = null; repeat = null; dateDialog = false }) { Text(t(R.string.clear_date)) }; TextButton(onClick = { dateDialog = false }) { Text(t(R.string.cancel)) } } }) { DatePicker(picker) }
     }
     if (timeDialog) {
         val value = time?.let(LocalTime::parse) ?: LocalTime.of(9, 0)
         val picker = rememberTimePickerState(initialHour = value.hour, initialMinute = value.minute, is24Hour = true)
-        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text("选择时间") }, text = { TimeInput(picker) },
-            confirmButton = { TextButton(onClick = { date = date ?: LocalDate.now().toString(); time = LocalTime.of(picker.hour, picker.minute).toString(); timeDialog = false }) { Text("确定") } },
-            dismissButton = { Row { TextButton(onClick = { time = null; timeDialog = false }) { Text("改为全天") }; TextButton(onClick = { timeDialog = false }) { Text("取消") } } })
+        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text(t(R.string.choose_time)) }, text = { WheelTimePicker(picker.hour, picker.minute, { picker.hour = it }, { picker.minute = it }) },
+            confirmButton = { TextButton(onClick = { date = date ?: LocalDate.now().toString(); time = LocalTime.of(picker.hour, picker.minute).toString(); timeDialog = false }) { Text(t(R.string.ok)) } },
+            dismissButton = { Row { TextButton(onClick = { time = null; timeDialog = false }) { Text(t(R.string.make_all_day)) }; TextButton(onClick = { timeDialog = false }) { Text(t(R.string.cancel)) } } })
     }
 }
 

@@ -1,11 +1,14 @@
 package com.example.todo.ui.ai
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import com.example.todo.ui.components.WheelTimePicker
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,41 +32,41 @@ fun AiImportScreen(state: ImportState, configuration: AiConfiguration?, onInput:
         else if (!configuration.consentGranted) consent = true
         else onRecognize(false)
     }
-    Scaffold(topBar = { TopAppBar(title = { Text("通知导入") }, navigationIcon = {
-        IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") }
-    }, actions = { TextButton(onClick = onSettings, enabled = !busy) { Text("AI 设置") } }) },
+    Scaffold(topBar = { TopAppBar(title = { Text(t(R.string.import_text)) }, navigationIcon = {
+        IconButton(onClick = onBack) { Icon(LineIcons.Back, t(R.string.back)) }
+    }, actions = { TextButton(onClick = onSettings, enabled = !busy) { Text(t(R.string.ai_settings)) } }) },
         bottomBar = { if (state.parsed && state.drafts.isNotEmpty()) Surface(shadowElevation = 3.dp) {
             Button(onClick = onAdd, enabled = !busy && state.drafts.any { it.selected },
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp).testTag("import-confirm")) {
-                Text(if (state.saving) "正在添加…" else "添加 ${state.drafts.count { it.selected }} 项待办")
+                Text(if (state.saving) t(R.string.adding) else t(R.string.add_task_count, state.drafts.count { it.selected }))
             }
         } }) { padding ->
         LazyColumn(Modifier.padding(padding).imePadding().testTag("import-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                OutlinedTextField(state.input, onInput, label = { Text("粘贴通知文本") }, enabled = !busy,
+                OutlinedTextField(state.input, onInput, label = { Text(t(R.string.paste_text)) }, enabled = !busy,
                     minLines = 4, maxLines = 10, modifier = Modifier.fillMaxWidth().testTag("notice-input"))
-                if (prepareNotice(state.input).truncated) Text("识别仅使用整理后的前 2000 字，请确认关键内容未被截断。", color = MaterialTheme.colorScheme.error)
-                if (configuration != null && !configuration.configured) Text("先配置模型服务，或手动创建待办。", style = MaterialTheme.typography.bodySmall)
+                if (prepareNotice(state.input).truncated) Text(t(R.string.only_the_first_2_000_characters_of_cleaned_text_are_used_check_th), color = MaterialTheme.colorScheme.error)
+                if (configuration != null && !configuration.configured) Text(t(R.string.configure_a_model_service_first_or_create_a_task_manually), style = MaterialTheme.typography.bodySmall)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(enabled = !busy, onClick = {
                         // Read clipboard only in this explicit user action, never on screen entry.
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.let { onInput(it.toString()) }
-                    }) { Text("从剪贴板粘贴") }
-                    Button(enabled = !busy && state.input.isNotBlank() && configuration != null, onClick = { recognize() }) { Text(if (state.error == null) "识别通知" else "重试识别") }
+                    }) { Text(t(R.string.paste_from_clipboard)) }
+                    Button(enabled = !busy && state.input.isNotBlank() && configuration != null, onClick = { recognize() }) { Text(if (state.error == null) t(R.string.identify_tasks) else t(R.string.retry_import)) }
                 }
             }
-            if (state.loading) item { NoticeSkeleton(); TextButton(onClick = onCancel) { Text("取消识别") } }
+            if (state.loading) item { NoticeSkeleton(); TextButton(onClick = onCancel) { Text(t(R.string.cancel_import)) } }
             state.error?.let { error -> item { Text(error, color = MaterialTheme.colorScheme.error) } }
             if (!state.loading) item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (state.error != null) TextButton(enabled = !busy && state.input.isNotBlank(), onClick = { onRecognize(true) }) { Text("使用本地规则") }
-                    TextButton(enabled = !busy, onClick = { onManual(state.input) }) { Text("手动创建") }
+                    if (state.error != null) TextButton(enabled = !busy && state.input.isNotBlank(), onClick = { onRecognize(true) }) { Text(t(R.string.use_local_rules_chinese)) }
+                    TextButton(enabled = !busy, onClick = { onManual(state.input) }) { Text(t(R.string.create_manually)) }
                 }
             }
             if (state.parsed) item {
-                Text(if (state.local) "本地规则结果 · 请逐项核对" else "识别结果 · 确认后才会保存", style = MaterialTheme.typography.titleMedium)
-                if (state.drafts.isEmpty()) Text("未识别到可执行事项。你可以手动创建，原文将带入备注。")
+                Text(if (state.local) t(R.string.local_results_review_each_task) else t(R.string.results_saved_only_after_confirmation), style = MaterialTheme.typography.titleMedium)
+                if (state.drafts.isEmpty()) Text(t(R.string.no_actionable_tasks_found_you_can_create_one_manually_with_the_or))
             }
             items(state.drafts, key = { it.id }) { draft -> DraftCard(draft, !state.saving, onUpdate) }
         }
@@ -85,22 +88,22 @@ private fun DraftCard(draft: TodoDraft, enabled: Boolean, update: (TodoDraft) ->
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(draft.selected, { update(draft.copy(selected = it)) }, enabled = enabled)
-                Text("加入待办", style = MaterialTheme.typography.titleSmall)
+                Text(t(R.string.include_task), style = MaterialTheme.typography.titleSmall)
             }
-            if (draft.uncertain || draft.invalidTime) Text(if (draft.invalidTime) "时间格式无效，请重新选择" else "信息不确定，请核对标题和时间", color = MaterialTheme.colorScheme.error)
-            if (draft.past(now)) Text("时间已过，提醒默认关闭", color = MaterialTheme.colorScheme.error)
-            OutlinedTextField(draft.title, { update(draft.copy(title = it.take(200))) }, enabled = enabled, label = { Text("事项标题") }, modifier = Modifier.fillMaxWidth())
+            if (draft.uncertain || draft.invalidTime) Text(if (draft.invalidTime) t(R.string.invalid_time_choose_it_again) else t(R.string.some_details_are_uncertain_check_the_title_and_time), color = MaterialTheme.colorScheme.error)
+            if (draft.past(now)) Text(t(R.string.this_time_has_passed_reminders_are_off_by_default), color = MaterialTheme.colorScheme.error)
+            OutlinedTextField(draft.title, { update(draft.copy(title = it.take(200))) }, enabled = enabled, label = { Text(t(R.string.task_title)) }, modifier = Modifier.fillMaxWidth())
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                InputChip(selected = draft.due != null, enabled = enabled, onClick = { dateDialog = true }, label = { Text(draft.due?.toLocalDate()?.toString() ?: "选择日期") })
-                InputChip(selected = draft.due != null && !draft.allDay, enabled = enabled, onClick = { timeDialog = true }, label = { Text(if (draft.allDay || draft.due == null) "选择时间" else draft.due.toLocalTime().toString()) })
-                if (draft.due != null) TextButton(enabled = enabled, onClick = { update(withDue(null)) }) { Text("清除时间") }
+                InputChip(selected = draft.due != null, enabled = enabled, onClick = { dateDialog = true }, label = { Text(draft.due?.toLocalDate()?.toString() ?: t(R.string.choose_date)) })
+                InputChip(selected = draft.due != null && !draft.allDay, enabled = enabled, onClick = { timeDialog = true }, label = { Text(if (draft.allDay || draft.due == null) t(R.string.choose_time) else draft.due.toLocalTime().toString()) })
+                if (draft.due != null) TextButton(enabled = enabled, onClick = { update(withDue(null)) }) { Text(t(R.string.clear_time)) }
             }
             if (draft.due != null) {
-                Row(verticalAlignment = Alignment.CenterVertically) { Text("全天", Modifier.weight(1f)); Switch(draft.allDay, { update(withDue(draft.due, it)) }, enabled = enabled) }
-                Row(verticalAlignment = Alignment.CenterVertically) { Text("提醒", Modifier.weight(1f)); Switch(draft.reminder, { update(draft.copy(reminder = it)) }, enabled = enabled) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.all_day), Modifier.weight(1f)); Switch(draft.allDay, { update(withDue(draft.due, it)) }, enabled = enabled) }
+                Row(verticalAlignment = Alignment.CenterVertically) { Text(t(R.string.reminder), Modifier.weight(1f)); Switch(draft.reminder, { update(draft.copy(reminder = it)) }, enabled = enabled) }
             }
-            OutlinedTextField(draft.location, { update(draft.copy(location = it)) }, enabled = enabled, label = { Text("地点") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.note, { update(draft.copy(note = it)) }, enabled = enabled, label = { Text("备注") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(draft.location, { update(draft.copy(location = it)) }, enabled = enabled, label = { Text(t(R.string.location)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(draft.note, { update(draft.copy(note = it)) }, enabled = enabled, label = { Text(t(R.string.notes)) }, modifier = Modifier.fillMaxWidth())
         }
     }
     if (dateDialog) {
@@ -110,12 +113,12 @@ private fun DraftCard(draft: TodoDraft, enabled: Boolean, update: (TodoDraft) ->
                 val day = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
                 update(withDue(day.atTime(draft.due?.toLocalTime() ?: LocalTime.MIDNIGHT), draft.allDay || draft.due == null))
             }; dateDialog = false
-        }) { Text("确定") } }, dismissButton = { TextButton(onClick = { dateDialog = false }) { Text("取消") } }) { DatePicker(picker) }
+        }) { Text(t(R.string.ok)) } }, dismissButton = { TextButton(onClick = { dateDialog = false }) { Text(t(R.string.cancel)) } }) { DatePicker(picker) }
     }
     if (timeDialog) {
         val picker = rememberTimePickerState(initialHour = draft.due?.hour ?: 9, initialMinute = draft.due?.minute ?: 0, is24Hour = true)
-        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text("事项时间") }, text = { TimeInput(picker) },
-            confirmButton = { TextButton(onClick = { update(withDue((draft.due?.toLocalDate() ?: now.toLocalDate()).atTime(picker.hour, picker.minute), false)); timeDialog = false }) { Text("确定") } },
-            dismissButton = { TextButton(onClick = { timeDialog = false }) { Text("取消") } })
+        AlertDialog(onDismissRequest = { timeDialog = false }, title = { Text(t(R.string.task_time)) }, text = { WheelTimePicker(picker.hour, picker.minute, { picker.hour = it }, { picker.minute = it }) },
+            confirmButton = { TextButton(onClick = { update(withDue((draft.due?.toLocalDate() ?: now.toLocalDate()).atTime(picker.hour, picker.minute), false)); timeDialog = false }) { Text(t(R.string.ok)) } },
+            dismissButton = { TextButton(onClick = { timeDialog = false }) { Text(t(R.string.cancel)) } })
     }
 }

@@ -1,5 +1,7 @@
 package com.example.todo.ui.nav
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.content.*
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.*
@@ -64,7 +66,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             sharedOrigin = origin
             nav.navigate("detail/$id")
         } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-        catch (_: Exception) { snackbar.showSnackbar("读取失败，请重试") }
+        catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_load_try_again)) }
         finally { opening = false }
     }
     var permissionRequest by remember { mutableIntStateOf(0) }
@@ -80,7 +82,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             nav.navigate("ai") { launchSingleTop = true }
             if (!configured) {
                 nav.navigate("ai-settings")
-                scope.launch { snackbar.showSnackbar("通知已填入，请先配置 AI，或返回手动创建") }
+                scope.launch { snackbar.showSnackbar(t(R.string.text_is_ready_configure_ai_or_go_back_to_create_a_task_manually)) }
             }
             // Consume only after the suspending configuration read; consuming cancels this effect.
             onShareConsumed()
@@ -92,7 +94,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             if (importState.addedWithReminder) permissionRequest++
             nav.popBackStack("today", false)
             importer.consumed()
-            scope.launch { snackbar.showSnackbar("已添加 $count 项待办") }
+            scope.launch { snackbar.showSnackbar(t(R.string.added_task_count, count)) }
         }
     }
     var zone by remember { mutableStateOf(ZoneId.systemDefault()) }
@@ -119,13 +121,13 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
         }
     }
     ReminderPermissionHost(container, permissionRequest) { message -> scope.launch {
-        if (snackbar.showSnackbar(message, "去设置", duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) nav.navigate("reminder")
+        if (snackbar.showSnackbar(message, t(R.string.open_settings), duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) nav.navigate("reminder")
     } }
     val reminderIssue by container.reminderIssue.collectAsStateWithLifecycle()
     LaunchedEffect(reminderIssue) { reminderIssue?.let { snackbar.showSnackbar(it, duration = SnackbarDuration.Long) } }
     LaunchedEffect(vm) {
         vm.messages.collect { message ->
-            val result = withTimeoutOrNull(5_000) { snackbar.showSnackbar(message.text, if (message.undo != null) "撤销" else null, duration = SnackbarDuration.Indefinite) }
+            val result = withTimeoutOrNull(5_000) { snackbar.showSnackbar(message.text, if (message.undo != null) t(R.string.undo) else null, duration = SnackbarDuration.Indefinite) }
             if (result == SnackbarResult.ActionPerformed) message.undo?.let(vm::undo)
         }
     }
@@ -151,26 +153,26 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 val edit by editor.state.collectAsStateWithLifecycle()
                 LaunchedEffect(edit.saved) { if (edit.saved) { if (edit.savedWithReminder) permissionRequest++; nav.popBackStack() } }
                 var detailMenu by remember { mutableStateOf(false) }
-                Scaffold(modifier = Modifier.todoSharedBounds(id), topBar = { CenterAlignedTopAppBar(title = { Text("待办详情", style = MaterialTheme.typography.titleLarge) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, "返回") } },
+                Scaffold(modifier = Modifier.todoSharedBounds(id), topBar = { CenterAlignedTopAppBar(title = { Text(t(R.string.task_details), style = MaterialTheme.typography.titleLarge) }, navigationIcon = { IconButton(onClick = { nav.popBackStack() }) { Icon(LineIcons.Back, t(R.string.back)) } },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface), actions = {
                         Box {
-                            IconButton(onClick = { detailMenu = true }) { Icon(LineIcons.More, "待办操作") }
+                            IconButton(onClick = { detailMenu = true }) { Icon(LineIcons.More, t(R.string.task_actions)) }
                             DropdownMenu(expanded = detailMenu, onDismissRequest = { detailMenu = false }) {
-                                DropdownMenuItem(text = { Text("复制") }, onClick = { detailMenu = false; scope.launch {
-                                    try { container.todos.copy(id)?.let { snackbar.showSnackbar("已复制") } }
+                                DropdownMenuItem(text = { Text(t(R.string.duplicate)) }, onClick = { detailMenu = false; scope.launch {
+                                    try { container.todos.copy(id)?.let { snackbar.showSnackbar(t(R.string.task_duplicated)) } }
                                     catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                                    catch (_: Exception) { snackbar.showSnackbar("复制失败，请重试") }
+                                    catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_duplicate_try_again)) }
                                 } })
-                                DropdownMenuItem(text = { Text("删除") }, onClick = { detailMenu = false; nav.popBackStack(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } })
+                                DropdownMenuItem(text = { Text(t(R.string.delete)) }, onClick = { detailMenu = false; nav.popBackStack(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } })
                                 if (edit.snapshot?.todo?.status == 0) {
                                     HorizontalDivider()
-                                    listOf("推迟10分钟" to 600_000L, "推迟1小时" to 3_600_000L, "推迟到明天此时" to -1L).forEach { (label, duration) ->
+                                    listOf(t(R.string.snooze_10_minutes) to 600_000L, t(R.string.snooze_1_hour) to 3_600_000L, t(R.string.snooze_until_tomorrow) to -1L).forEach { (label, duration) ->
                                         DropdownMenuItem(text = { Text(label) }, onClick = { detailMenu = false; scope.launch {
                                             try {
                                                 val trigger = if (duration < 0) ZonedDateTime.now().plusDays(1).toInstant().toEpochMilli() else System.currentTimeMillis() + duration
-                                                if (container.todos.snooze(id, trigger)) { permissionRequest++; nav.popBackStack(); snackbar.showSnackbar("已推迟提醒") }
+                                                if (container.todos.snooze(id, trigger)) { permissionRequest++; nav.popBackStack(); snackbar.showSnackbar(t(R.string.reminder_snoozed)) }
                                             } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                                            catch (_: Exception) { snackbar.showSnackbar("推迟失败，请重试") }
+                                            catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_snooze_try_again)) }
                                         } })
                                     }
                                 }
@@ -179,7 +181,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                     }) }) { padding ->
                     when {
                         edit.loading -> NoticeSkeleton(Modifier.padding(padding).padding(20.dp))
-                        edit.missing -> Text(edit.error ?: "待办已删除", Modifier.padding(padding).padding(20.dp))
+                        edit.missing -> Text(edit.error ?: t(R.string.task_deleted), Modifier.padding(padding).padding(20.dp))
                         else -> Column(Modifier.padding(padding)) {
                             TodoEditor(edit.snapshot?.todo, edit.saving, edit.error, editor::save, {},
                                 reminders = edit.snapshot?.reminders.orEmpty(), defaultMinute = settings.allDayMinute,
@@ -198,7 +200,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                     importer::update, importer::addSelected, onConsent = { scope.launch {
                         try { container.settings.aiConsent(true); importer.recognize() }
                         catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                        catch (_: Exception) { snackbar.showSnackbar("授权保存失败，请重试") }
+                        catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_save_consent_try_again)) }
                     } }, onSettings = { nav.navigate("ai-settings") },
                     onManual = { manualNote = it; add = true }, onBack = { importer.cancel(); nav.popBackStack() })
             }

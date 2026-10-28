@@ -1,5 +1,7 @@
 package com.example.todo.reminder
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.content.*
 import com.example.todo.App
 import kotlinx.coroutines.*
@@ -9,9 +11,9 @@ private fun BroadcastReceiver.finishAsync(context: Context, block: suspend (com.
     val container = (context.applicationContext as App).container
     container.scope.launch {
         try { withTimeout(8_000) { block(container) } }
-        catch (_: TimeoutCancellationException) { container.reminderIssue.value = "提醒处理超时，请打开应用自检" }
+        catch (_: TimeoutCancellationException) { container.reminderIssue.value = t(R.string.reminder_timeout) }
         catch (e: CancellationException) { throw e }
-        catch (_: Exception) { container.reminderIssue.value = "提醒处理未完成，请打开应用自检" }
+        catch (_: Exception) { container.reminderIssue.value = t(R.string.reminder_incomplete) }
         finally { result.finish() }
     }
 }

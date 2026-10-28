@@ -1,5 +1,7 @@
 package com.example.todo.domain
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import java.time.*
 
 sealed interface RepeatRule {
@@ -14,10 +16,10 @@ sealed interface RepeatRule {
             value == "MONTHLY" -> Monthly
             value.startsWith("WEEKLY:") -> {
                 val numbers = value.substringAfter(':').split(',').map { it.toIntOrNull() }
-                require(numbers.isNotEmpty() && numbers.all { it != null && it in 1..7 }) { "重复星期无效" }
+                require(numbers.isNotEmpty() && numbers.all { it != null && it in 1..7 }) { t(R.string.invalid_repeat_days) }
                 Weekly(numbers.map { DayOfWeek.of(requireNotNull(it)) }.toSet())
             }
-            else -> throw IllegalArgumentException("重复规则无效")
+            else -> throw IllegalArgumentException(t(R.string.invalid_repeat_rule))
         }
     }
 

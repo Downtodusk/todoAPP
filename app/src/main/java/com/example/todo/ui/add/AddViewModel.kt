@@ -1,5 +1,7 @@
 package com.example.todo.ui.add
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todo.data.local.TodoEntity
@@ -21,7 +23,7 @@ class AddViewModel(private val repository: TodoRepository, private val id: Long?
     init { if (id != null && !initialLoaded) viewModelScope.launch {
         try { val snapshot = repository.get(id); mutable.value = EditorState(snapshot = snapshot, missing = snapshot == null) }
         catch (e: CancellationException) { throw e }
-        catch (_: Exception) { mutable.value = EditorState(missing = true, error = "读取失败，请返回后重试") }
+        catch (_: Exception) { mutable.value = EditorState(missing = true, error = t(R.string.could_not_load_go_back_and_try_again)) }
     } }
     fun save(todo: TodoEntity, reminders: List<ReminderEntity>? = null) {
         if (mutable.value.saving) return
@@ -30,8 +32,8 @@ class AddViewModel(private val repository: TodoRepository, private val id: Long?
             try { repository.save(todo, reminders); mutable.update { it.copy(saving = false, saved = true,
                 savedWithReminder = (reminders ?: it.snapshot?.reminders.orEmpty()).isNotEmpty() && todo.status == 0) } }
             catch (e: CancellationException) { throw e }
-            catch (e: IllegalArgumentException) { mutable.update { it.copy(saving = false, error = e.message ?: "请检查输入") } }
-            catch (_: Exception) { mutable.update { it.copy(saving = false, error = "保存失败，请重试") } }
+            catch (e: IllegalArgumentException) { mutable.update { it.copy(saving = false, error = e.message ?: t(R.string.check_your_input)) } }
+            catch (_: Exception) { mutable.update { it.copy(saving = false, error = t(R.string.could_not_save_try_again)) } }
         }
     }
 }

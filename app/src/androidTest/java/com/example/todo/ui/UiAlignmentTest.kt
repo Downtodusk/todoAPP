@@ -83,14 +83,17 @@ class UiAlignmentTest {
         compose.onNodeWithText("地点", substring = false).performScrollTo().performClick()
         compose.onNodeWithText("地点（可选）").performTextReplacement("图书馆")
         compose.onNodeWithText("确定").performClick()
+        compose.waitUntil(5_000) { androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true }
         compose.onNodeWithText("备注", substring = false).performScrollTo().performClick()
         compose.onNodeWithText("备注（可选）").performTextReplacement("更新后的会议记录")
         compose.onNodeWithText("确定").performClick()
+        compose.waitUntil(5_000) { androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true }
         compose.onNodeWithText("提醒", substring = false).performScrollTo().performClick()
         compose.onNode(isToggleable()).performClick()
         compose.onNodeWithText("自定义").performClick()
         compose.onNodeWithText("分钟，最多 525600").performTextReplacement("17")
         compose.onNodeWithText("确定").performClick()
+        compose.waitUntil(5_000) { androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true }
         compose.onNodeWithText("完成", substring = false).performClick()
         compose.onNodeWithText("重复", substring = false).performScrollTo().performClick()
         compose.onNodeWithText("每月", substring = false).performClick()

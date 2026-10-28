@@ -28,3 +28,9 @@ API 29+ uses the public Android custom font fallback API to combine Latin and Ch
 ## 0.3.1 Chinese serif update
 
 The user explicitly selected Source Han Serif (思源宋体), replacing Source Han Sans SC. The unmodified Regular SC OTF is downloaded from the [official Adobe repository](https://github.com/adobe-fonts/source-han-serif), pinned in `design/font-sources.json`, and ships with its OFL license in `assets/licenses/source-han-serif.txt`. The old Chinese sans font is removed from the APK. English Source Serif 4 / Source Sans 3 remain unchanged; Android 8/9 now uses the Chinese serif face's own Latin glyphs. This is not Windows SimSun.
+
+## 0.4.0 language support
+
+AppCompat **1.7.1** supplies per-app locales on API 26–32 and delegates to the platform on API 33+. MainActivity now extends AppCompatActivity with its no-action-bar theme. Locale metadata stores the preference, `locales_config.xml` declares English and Simplified Chinese, and language splitting is disabled so both translations remain available offline. UI resources use the configured activity locale immediately; background notifications use the persisted application locale. References: [Android per-app language guide](https://developer.android.com/guide/topics/resources/app-languages), [AppCompat release notes](https://developer.android.com/jetpack/androidx/releases/appcompat).
+
+The time wheel uses the platform NumberPicker; no wheel/color-picker SDK is added. Custom accent colors are stored in DataStore and adjusted locally for foreground/background contrast. No schema migration, new network service or permission is required.

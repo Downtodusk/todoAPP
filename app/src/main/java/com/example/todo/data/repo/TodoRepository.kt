@@ -1,5 +1,7 @@
 package com.example.todo.data.repo
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import androidx.room.withTransaction
 import com.example.todo.data.local.*
 import com.example.todo.domain.*
@@ -33,7 +35,7 @@ class TodoRepository(val database: TodoDatabase, private val clock: Clock = Cloc
         change { saveInTransaction(input, newReminders, zone) }
 
     suspend fun importBatch(items: List<Pair<TodoEntity, List<ReminderEntity>>>, zone: ZoneId = ZoneId.systemDefault()): List<Long> = change {
-        require(items.isNotEmpty()) { "请至少选择一项待办" }
+        require(items.isNotEmpty()) { t(R.string.select_at_least_one_task) }
         items.map { (todo, reminders) ->
             require(todo.id == 0L && todo.status == 0)
             saveInTransaction(todo, reminders, zone)
@@ -42,13 +44,13 @@ class TodoRepository(val database: TodoDatabase, private val clock: Clock = Cloc
 
     private suspend fun saveInTransaction(input: TodoEntity, newReminders: List<ReminderEntity>?, zone: ZoneId): Long {
         val title = input.title.trim()
-        require(title.length in 1..200) { "标题需要 1–200 个字符" }
+        require(title.length in 1..200) { t(R.string.the_title_must_contain_1_200_characters) }
         require(input.status in 0..1)
         val rule = RepeatRule.parse(input.repeatRule)
-        require(rule == null || input.dueAt != null) { "请先设置重复事项的日期" }
+        require(rule == null || input.dueAt != null) { t(R.string.set_a_date_before_repeating_a_task) }
         require(!input.allDay || (input.dueAt != null && input.allDayDate != null))
-        val previous = if (input.id != 0L) requireNotNull(todos.find(input.id)) { "待办已删除" } else null
-        require(previous == null || previous.revision == input.revision) { "待办已发生变化，请重新打开后编辑" }
+        val previous = if (input.id != 0L) requireNotNull(todos.find(input.id)) { t(R.string.task_deleted) } else null
+        require(previous == null || previous.revision == input.revision) { t(R.string.this_task_changed_reopen_it_before_editing) }
         val now = clock.millis()
         val dueAt = if (input.allDay) DateTimeUtil.startOfDay(LocalDate.parse(input.allDayDate), zone) else input.dueAt
         val dueChanged = previous?.dueAt != dueAt || previous?.allDayDate != input.allDayDate

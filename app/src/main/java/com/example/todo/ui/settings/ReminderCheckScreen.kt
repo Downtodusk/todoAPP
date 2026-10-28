@@ -1,5 +1,7 @@
 package com.example.todo.ui.settings
 
+import com.example.todo.R
+import com.example.todo.i18n.t
 import android.app.*
 import android.content.*
 import android.net.Uri
@@ -62,70 +64,70 @@ fun ReminderCheckScreen(app: AppContainer, onBack: () -> Unit, requestPermission
     val exact = remember(tick) { app.alarms.permitted() }
     val channel = remember(tick) { app.notifications.channelEnabled() }
     val battery = remember(tick) { context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName) }
-    Scaffold(topBar = { TopAppBar(title = { Text("提醒自检") }, navigationIcon = { IconButton(onClick = onBack) { Icon(LineIcons.Back, "返回") } }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(t(R.string.reminder_check)) }, navigationIcon = { IconButton(onClick = onBack) { Icon(LineIcons.Back, t(R.string.back)) } }) }) { padding ->
         Column(Modifier.padding(padding).padding(20.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("提醒方式", style = MaterialTheme.typography.titleMedium)
-            listOf(ReminderMode.STANDARD to "普通提醒", ReminderMode.ALARM_CLOCK to "系统闹钟提醒").forEach { (mode, label) ->
+            Text(t(R.string.reminder_mode), style = MaterialTheme.typography.titleMedium)
+            listOf(ReminderMode.STANDARD to t(R.string.standard_reminders), ReminderMode.ALARM_CLOCK to t(R.string.system_alarm_reminders)).forEach { (mode, label) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = settings.reminderMode == mode, enabled = !changingMode,
                         modifier = Modifier.semantics { contentDescription = label }, onClick = {
                         changingMode = true
                         scope.launch {
-                            try { app.settings.reminderMode(mode); app.refreshReminders(); message = "提醒方式已保存，正在重新注册未触发的提醒" }
+                            try { app.settings.reminderMode(mode); app.refreshReminders(); message = t(R.string.mode_saved_rescheduling_pending_reminders) }
                             catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                            catch (_: Exception) { message = "提醒方式保存失败，请重试" }
+                            catch (_: Exception) { message = t(R.string.could_not_save_reminder_mode_try_again) }
                             finally { changingMode = false }
                         }
                     })
                     Text(label)
                 }
             }
-            Text("普通提醒为默认方式。系统闹钟提醒适合出现延迟的设备，会显示系统的下一次闹钟标记，可能增加耗电；仍需允许通知、后台运行及自启动。", style = MaterialTheme.typography.bodySmall)
+            Text(t(R.string.standard_reminders_are_the_default_system_alarm_mode_may_help_on), style = MaterialTheme.typography.bodySmall)
             HorizontalDivider()
-            fun status(ok: Boolean) = if (ok) "已开启" else "未开启"
-            Text("通知权限：${status(notifications)}")
-            Text("精确闹钟：${status(exact)}")
-            Text("通知渠道：${if (channel) "可发送" else "已关闭"}")
+            fun status(ok: Boolean) = if (ok) t(R.string.on) else t(R.string.off)
+            Text(t(R.string.notification_status, status(notifications)))
+            Text(t(R.string.exact_alarm_status, status(exact)))
+            Text(t(R.string.channel_status, status(channel)))
             val channelInfo = context.getSystemService(NotificationManager::class.java).getNotificationChannel(NotificationHelper.Channel)
-            Text("提示方式：${if (channelInfo?.sound == null) "无铃声" else "有铃声"} · ${if (channelInfo?.shouldVibrate() == true) "有振动" else "无振动"}", style = MaterialTheme.typography.bodySmall)
-            Text("Android 电池优化豁免：${status(battery)}")
-            Text("厂商的后台运行限制与此项独立，请同时检查下方的设备设置指引。", style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = requestPermission) { Text("检查并申请提醒权限") }
-            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text("锁屏通知与显示位置") }
-            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(Settings.EXTRA_CHANNEL_ID, NotificationHelper.Channel)) }) { Text("通知铃声与渠道设置") }
-            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))) }) { Text("允许后台提醒（电池优化）") }
+            Text(t(R.string.alert_status, t(if (channelInfo?.sound == null) R.string.sound_off else R.string.sound_on), t(if (channelInfo?.shouldVibrate() == true) R.string.vibration_on else R.string.vibration_off)), style = MaterialTheme.typography.bodySmall)
+            Text(t(R.string.battery_status, status(battery)))
+            Text(t(R.string.manufacturer_background_restrictions_are_separate_also_check_the), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = requestPermission) { Text(t(R.string.check_reminder_permissions)) }
+            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text(t(R.string.lock_screen_notifications)) }
+            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(Settings.EXTRA_CHANNEL_ID, NotificationHelper.Channel)) }) { Text(t(R.string.reminder_sound_and_channel)) }
+            TextButton(onClick = { openSettings(context, Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))) }) { Text(t(R.string.allow_background_reminders)) }
             Button(enabled = !busy, onClick = {
                 busy = true
                 scope.launch {
                     try {
                         val time = System.currentTimeMillis() + 10_000
-                        app.todos.save(TodoEntity(title = "测试提醒", note = "提醒自检创建，测试完成后可删除。", dueAt = time), listOf(ReminderEntity(todoId = 0, triggerAt = time)))
-                        message = if (notifications && exact && channel) "已创建测试待办，10 秒后提醒" else "已创建测试待办，请先开启提醒权限与通知渠道"
+                        app.todos.save(TodoEntity(title = t(R.string.test_reminder), note = t(R.string.created_by_reminder_check_you_can_delete_it_after_testing), dueAt = time), listOf(ReminderEntity(todoId = 0, triggerAt = time)))
+                        message = if (notifications && exact && channel) t(R.string.test_task_created_reminder_in_10_seconds) else t(R.string.test_task_created_enable_reminder_permissions_and_the_notificatio)
                         if (!notifications || !exact) requestPermission()
                     } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                    catch (_: Exception) { message = "测试提醒创建失败，请重试" }
+                    catch (_: Exception) { message = t(R.string.could_not_create_test_reminder_try_again) }
                     finally { busy = false }
                 }
-            }) { Text("发送测试提醒（10秒）") }
-            TextButton(onClick = { app.refreshReminders(); tick++; message = "已请求重新注册提醒" }) { Text("重新注册提醒") }
+            }) { Text(t(R.string.send_test_reminder_10_seconds)) }
+            TextButton(onClick = { app.refreshReminders(); tick++; message = t(R.string.reminder_rescheduling_requested) }) { Text(t(R.string.reschedule_reminders)) }
             message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             HorizontalDivider()
-            Text("${Build.MANUFACTURER} 后台运行设置", style = MaterialTheme.typography.titleMedium)
+            Text(t(R.string.vendor_settings, Build.MANUFACTURER), style = MaterialTheme.typography.titleMedium)
             val manufacturer = Build.MANUFACTURER.lowercase(java.util.Locale.ROOT)
             Text(when (manufacturer) {
-                "xiaomi" -> "在应用管理中开启自启动，将省电策略设为无限制，并在最近任务中锁定待办。"
-                "huawei", "honor" -> "在应用启动管理中关闭自动管理，允许自启动、关联启动和后台活动，并锁定最近任务。"
-                "oppo", "realme" -> "进入应用详情 → 耗电管理，选择“完全允许后台行为”（部分版本称“允许后台活动”）。再在系统设置中搜索“自启动”，允许待办自启动；否则进程退出后系统可能拦截提醒。Android 的电池优化豁免不能替代这两项。在通知管理中允许锁屏通知，内容是否隐藏由你选择。调整后请再次测试准时性；厂商仍可能延迟闹钟。"
-                "vivo" -> "在应用电池管理中允许后台运行与自启动，关闭对待办的后台耗电限制，并锁定最近任务。"
-                "samsung" -> "在电池设置中将待办加入从不休眠的应用，允许后台活动。"
-                else -> "在应用电池设置中选择不受限制；系统提供自启动或后台运行选项时允许待办运行。"
+                "xiaomi" -> t(R.string.enable_auto_start_in_app_management_set_battery_usage_to_unrestri)
+                "huawei", "honor" -> t(R.string.turn_off_automatic_app_launch_management_allow_auto_start_seconda)
+                "oppo", "realme" -> t(R.string.open_app_info_battery_usage_and_allow_background_activity_then_se)
+                "vivo" -> t(R.string.allow_background_activity_and_auto_start_remove_background_batter)
+                "samsung" -> t(R.string.add_todo_to_never_sleeping_apps_in_battery_settings_and_allow_bac)
+                else -> t(R.string.choose_unrestricted_in_app_battery_settings_allow_auto_start_or_b)
             })
             TextButton(onClick = {
                 val intent = vendorComponents[manufacturer].orEmpty().mapNotNull(ComponentName::unflattenFromString)
                     .map { Intent().setComponent(it) }.firstOrNull { it.resolveActivity(context.packageManager) != null }
                 openSettings(context, intent ?: Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
-            }) { Text("打开厂商后台设置") }
-            Text("系统“强行停止”会阻止提醒，需再次打开应用恢复。划掉最近任务与强行停止不同；厂商策略仍需在你的手机上验证。", style = MaterialTheme.typography.bodySmall)
+            }) { Text(t(R.string.open_device_background_settings)) }
+            Text(t(R.string.force_stop_blocks_reminders_until_you_open_todo_again_removing_it), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

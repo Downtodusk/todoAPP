@@ -1,52 +1,61 @@
-# 待办 · Android
+<div align="center">
 
-原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
+# 待办
 
-当前 **0.4.4** 在用户已认可的动效基础上小幅提速：进入 190ms，返回最多 380ms，保留缩小、详情下移淡出、条目渐显并落回原位置的完整顺序。继续推进规划中的 Baseline Profile 与性能验证，见 [本轮记录](docs/performance-0.4.4.md)。真机性能及其他未完成验收仍按独立项目记录。
+把琐事记下来，把注意力留给今天。
 
-## 构建
+一款简洁、温暖的 Android 待办应用，融合日历日程、轻巧提醒与 AI 通知导入。
 
-本机工具已准备在忽略版本控制的 `.tools/` 中，详见 [环境说明](docs/development-environment.md)。
+**Android 8.0+ · 离线优先 · 中文 / English**
 
-```bash
-source scripts/android-env.sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug
-```
+[下载最新版本](https://github.com/Downtodusk/todoAPP/releases/latest) · [使用方法](#使用方法)
 
-换机器时需自行安装对应 JDK/SDK，或调整环境脚本；仓库不包含工具缓存、代理设置或任何签名密钥。
+</div>
 
-## 安装开发包
+## 特性
 
-已有此前测试安装时，下载 `dist/todo-0.4.4-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.4.4-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
+| 功能 | 说明 |
+| --- | --- |
+| **日历与日程** | 周历、月历与每日清单，配合「全部待办」搜索，随时查看今天和未来的安排。 |
+| **随手记录** | 添加标题、备注、地点、日期与时间；支持全天事项、时间滚轮及重复任务。 |
+| **提醒与处理** | 普通提醒与系统闹钟提醒两种方式；在通知中完成事项或推迟提醒。 |
+| **自然交互** | 左右滑动展开操作菜单，完成与删除后支持撤销；详情以圆角卡片动效展开、收回。 |
+| **个性外观** | 暖白与陶土色调、思源宋体；支持深浅色、动态取色、五套预设与自定义配色。 |
+| **AI 通知导入** | 粘贴或分享通知，提取标题、时间与地点，编辑确认后批量添加。支持自选 OpenAI 兼容或 Anthropic 服务。 |
 
-原始 Debug 构建输出：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
+## 下载安装
 
-```bash
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+前往 [Releases](https://github.com/Downtodusk/todoAPP/releases/latest)，下载 APK，在手机上打开并按系统提示安装。
 
-也可将 APK 传到手机后点击安装，并允许该文件来源安装应用。Debug 包使用本地开发签名。
+| 安装包 | 适用场景 |
+| --- | --- |
+| `todo-版本号-release.apk` | 首次安装，或更新已有的 Release 版本。 |
+| `todo-版本号-debug.apk` | 更新此前安装的 Debug 测试版。 |
 
-手机接在 Windows、开发机为远程 Linux 时，使用 [Windows USB / SSH ADB 转发步骤](docs/remote-device-testing.md)。
+更新时选择与已安装版本相同类型的 APK，覆盖安装即可保留本地待办和设置。
 
-安装后可添加、编辑、完成、删除和撤销待办；通过周历或“全部待办”查看未来事项。首次设置提醒时再申请权限，在“设置 → 提醒自检”中检查并测试。系统强行停止期间不能保证提醒；再次打开应用后恢复调度。
+## 使用方法
 
-提醒默认使用普通模式。可在提醒自检中选择“系统闹钟提醒”；它可能显示系统下一次闹钟标记，并增加资源使用。在本次 OPPO 对照测试中，它改善了锁屏、进程退出后的送达时间；其他机型仍需实测。两种模式均需正确配置通知及厂商后台权限，详见[兼容性决策](docs/reminder-compatibility-proposal.md)。
+### 记录与安排
 
-设置中可选择跟随系统、简体中文或 English；配色提供 5 套预设，也可输入十六进制色值或调整 RGB 滑块。语言与颜色保存在本机。选择配色会关闭动态取色，深浅色外观仍可独立选择。
+1. 点击首页 **＋**，填写待办标题。
+2. 在上方日历选择日期，按需设置时间、提醒、重复规则、地点与备注，点击 **保存**。
+3. 点击条目编辑详情；点击圆形勾选框完成事项，或左右滑动展开操作菜单。完成、删除后可通过底部提示 **撤销**。
 
-## 验证与发布状态
+点击周历切换日期，通过「全部待办」查看和搜索其他事项。设置提醒时按提示开启通知权限，也可在 **设置 → 提醒自检** 中检查配置、选择提醒方式并发送测试提醒。
 
-- [实施进度与验证边界](docs/implementation-status.md)
-- [提醒真机测试矩阵](docs/reminder-test-matrix.md)
-- [依赖用途](docs/dependencies.md)
-- [实现决策](docs/decisions.md)
-- [交互与性能验收](docs/motion-and-performance.md)
-- [AI 配置、隐私与评测](docs/ai-import.md)
-- [签名、日志导出与后续反馈](docs/release-and-diagnostics.md)
+### 从通知创建待办
 
-`./gradlew :app:assembleRelease` 使用本地发布身份生成可安装的签名包；`bash scripts/package-apks.sh` 汇总 APK、校验值与证书报告到 `dist/`。私钥和 `keystore.properties` 不入 Git，需一起安全备份；新机器应恢复同一身份。
+1. 在 **设置 → AI 服务与密钥** 中填写服务地址、模型名称与自己的 API Key，测试连接。
+2. 打开 **AI 通知识别**，粘贴文本，或从其他应用分享纯文本到「待办」，点击识别。
+3. 核对并编辑结果，勾选需要的事项，再批量添加。也可选择本地规则或手动创建。
 
-AI 导入使用你自行填写的服务与密钥，默认不保存原文，首次发送前征求授权；可在识别失败后选择本地规则或手动创建。设置中可导出不含用户内容的本地崩溃日志。
+### 调成喜欢的样子
 
-已知限制：OPPO 重启恢复提醒失败按用户要求暂缓；Doze、省电、时区、三品牌覆盖、真实模型准确率及启动/帧率/内存指标尚未完成验收。用户会在方便时下载测试，本轮不继续操作手机。
+在设置中切换语言、深浅色和配色，调整默认全天提醒时间，或开启「动画降级」来简化动效。
+
+## 数据与隐私
+
+待办与设置保存在设备本地，基础功能离线可用，无需注册账号。
+
+AI 导入按需启用：确认授权后，文本才会发送至你配置的服务商；API Key 经 Android Keystore 加密保存，导入原文默认不保存。剪贴板仅在主动点击粘贴时读取。

@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalConfiguration
 import com.example.todo.data.local.TodoEntity
 import com.example.todo.domain.*
+import com.example.todo.ui.components.LocalTaskReturn
+import androidx.compose.animation.core.spring
 import com.example.todo.ui.components.LineIcons
 import java.time.*
 import java.time.format.DateTimeFormatter
@@ -38,6 +40,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
     onAll: () -> Unit, onSettings: () -> Unit, onBack: () -> Unit, adding: Boolean = false) {
     val pagePadding = if (LocalConfiguration.current.screenWidthDp < 384) 12.dp else 24.dp
     val reduced = LocalReducedMotion.current
+    val returning = LocalTaskReturn.current?.request != null
     var selectedValue by rememberSaveable { mutableStateOf(today.toString()) }
     var lastToday by rememberSaveable { mutableStateOf(today.toString()) }
     LaunchedEffect(today) { if (selectedValue == lastToday) selectedValue = today.toString(); lastToday = today.toString() }
@@ -97,12 +100,12 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                 val filtered = state.todos.filter { listOfNotNull(it.title, it.note, it.location).any { text -> text.contains(query, ignoreCase = true) } }
                     .sortedWith(compareBy<TodoEntity> { it.status }.thenBy { it.dueAt == null }.thenBy { it.dueAt })
                 if (!state.loading && filtered.isEmpty()) item { EmptyAgenda() }
-                items(filtered, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
+                items(filtered, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(fadeInSpec = if (returning) null else spring(), fadeOutSpec = if (returning) null else spring(), placementSpec = if (reduced || returning) null else com.example.todo.ui.theme.Motion.interaction())) }
             } else {
                 fun section(label: String, todos: List<TodoEntity>) {
                     if (todos.isNotEmpty()) {
                         item(key = label) { Text(label, style = MaterialTheme.typography.titleSmall, color = if (label == t(R.string.overdue)) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)) }
-                        items(todos, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
+                        items(todos, key = { it.id }) { todo -> TodoRow(todo, zone, onDetail, onComplete, onDelete, Modifier.animateItem(fadeInSpec = if (returning) null else spring(), fadeOutSpec = if (returning) null else spring(), placementSpec = if (reduced || returning) null else com.example.todo.ui.theme.Motion.interaction())) }
                     }
                 }
                 section(t(R.string.overdue), agenda.overdue)
@@ -116,7 +119,7 @@ fun TodayScreen(state: TodoListState, today: LocalDate, zone: ZoneId, all: Boole
                         Text(t(R.string.completed), Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium)
                         Text("${agenda.completed.size}", Modifier.padding(start = 10.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } }
-                    if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, onDelete, Modifier.animateItem(placementSpec = if (reduced) null else com.example.todo.ui.theme.Motion.interaction())) }
+                    if (showCompleted) items(agenda.completed, key = { it.id }) { TodoRow(it, zone, onDetail, onComplete, onDelete, Modifier.animateItem(fadeInSpec = if (returning) null else spring(), fadeOutSpec = if (returning) null else spring(), placementSpec = if (reduced || returning) null else com.example.todo.ui.theme.Motion.interaction())) }
                 }
                 if (!state.loading && state.error == null && agenda.empty) item { EmptyAgenda() }
             }

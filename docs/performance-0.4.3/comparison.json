@@ -1,0 +1,43 @@
+{
+  "method": "API 36 x86_64 SwiftShader emulator; R8, Full AOT; 10 iterations x 3 open/Back round trips per APK; 420 dpi, font 1.0, three-button navigation. Sequential same-session runs, no simultaneous Gradle build.",
+  "limitations": [
+    "One run per APK; not a statistical claim of improvement.",
+    "Key Back benchmark does not measure continuous predictive-back gesture input.",
+    "Benchmark APK is optimized and Full-AOT; delivered Debug APK is not performance-equivalent.",
+    "No phone FPS, dropped-frame acceptance, or generated Baseline Profile claim."
+  ],
+  "versions": {
+    "0.4.2-B": {
+      "apkSha256": "a68af2729391dbfa3d50de76618ae778cc6a1f704002196aefdd621f9056f462",
+      "sampledMetrics": {
+        "frameDurationCpuMs": {
+          "P50": 23.2068795,
+          "P95": 37.1138334,
+          "P99": 56.67002835000011
+        },
+        "frameOverrunMs": {
+          "P50": 8.2107515,
+          "P95": 28.615555099999998,
+          "P99": 64.00520320000005
+        }
+      },
+      "frameCount": 1060.0
+    },
+    "0.4.3": {
+      "apkSha256": "7cc7acf6b034ad9f3693d94dbeee1d02d5778a36dd40d1213b46aff564bffad3",
+      "sampledMetrics": {
+        "frameDurationCpuMs": {
+          "P50": 26.2007745,
+          "P95": 38.421532899999995,
+          "P99": 54.02288970999973
+        },
+        "frameOverrunMs": {
+          "P50": 13.196783499999999,
+          "P95": 29.1682599,
+          "P99": 55.95993358999998
+        }
+      },
+      "frameCount": 1438.0
+    }
+  }
+}

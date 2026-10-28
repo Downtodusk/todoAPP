@@ -5,14 +5,18 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.*
@@ -20,44 +24,54 @@ import com.example.todo.ui.theme.Motion
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.first
 
 /** Geometry is evaluated by the render layer, without remeasuring the calendar/text on drag. */
 internal object DetailBackGeometry {
     const val MinScale = .90f
+    fun gestureProgress(raw: Float): Float {
+        // System progress is often small even for a normal swipe. Reach the bounded shrink
+        // earlier, easing into its limit rather than requiring a near-full-width gesture.
+        val fraction = (raw / .6f).coerceIn(0f, 1f)
+        return fraction * (2f - fraction)
+    }
     fun scale(progress: Float) = 1f - (1f - MinScale) * progress.coerceIn(0f, 1f)
     fun radius(progress: Float) = 28f * progress.coerceIn(0f, 1f)
-    fun horizontal(progress: Float, edge: Int) = 12f * progress.coerceIn(0f, 1f) * if (edge == BackEventCompat.EDGE_LEFT) 1 else -1
+    fun horizontal(progress: Float, edge: Int) = 12f * progress.coerceIn(0f, 1f) * when (edge) { BackEventCompat.EDGE_LEFT -> 1; BackEventCompat.EDGE_RIGHT -> -1; else -> 0 }
 }
 
-private class RetractingShape(private val radius: Float, private val collapse: Float) : Shape {
-    override fun createOutline(size: androidx.compose.ui.geometry.Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val inset = size.height * .5f * collapse.coerceIn(0f, 1f)
-        return Outline.Rounded(RoundRect(0f, inset, size.width, size.height - inset,
-            CornerRadius(radius.coerceAtMost((size.height - 2f * inset).coerceAtLeast(0f) / 2f))))
-    }
-}
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun GmailDetailFrame(enabled: Boolean, preview: ImageBitmap?, onBack: () -> Unit,
+fun GmailDetailFrame(enabled: Boolean, preview: ImageBitmap?, targetId: () -> Long?, onBack: () -> Boolean,
     content: @Composable (close: () -> Unit) -> Unit) {
-    if (!enabled) { content(onBack); return }
+    if (!enabled) { content { onBack() }; return }
+    val host = checkNotNull(LocalTaskReturn.current)
+    val layer = rememberGraphicsLayer()
+    var bounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
     val scope = rememberCoroutineScope()
     val latestBack by rememberUpdatedState(onBack)
     val progress = remember { Animatable(0f) }
-    val collapse = remember { Animatable(0f) }
     var edge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
     var closing by remember { mutableStateOf(false) }
     var recovery by remember { mutableStateOf<Job?>(null) }
     val density = LocalDensity.current.density
-    // Shared by toolbar, save/delete and system Back. Pop only after the last visual frame.
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val imeVisible by rememberUpdatedState(WindowInsets.isImeVisible)
+    // Capture once, then let the root overlay own the animation across navigation disposal.
     val close: () -> Unit = {
         if (!closing) {
             closing = true
             recovery?.cancel()
             scope.launch {
-                if (progress.value < .35f) progress.animateTo(.35f, tween(80, easing = Motion.Enter))
-                collapse.animateTo(1f, tween(200, easing = Motion.Enter))
-                latestBack()
+                try {
+                    focus.clearFocus(); keyboard?.hide()
+                    if (imeVisible) withTimeoutOrNull(700) { snapshotFlow { imeVisible }.first { !it } }
+                    val image = layer.toImageBitmap()
+                    host.start(image, bounds, targetId(), progress.value, if (progress.value == 0f) -1 else edge, navigate = latestBack)
+                } catch (e: CancellationException) { throw e }
+                catch (_: Exception) { latestBack() }
             }
         }
     }
@@ -66,7 +80,7 @@ fun GmailDetailFrame(enabled: Boolean, preview: ImageBitmap?, onBack: () -> Unit
         try {
             events.collect { event ->
                 edge = event.swipeEdge
-                progress.snapTo(event.progress.coerceIn(0f, 1f))
+                progress.snapTo(DetailBackGeometry.gestureProgress(event.progress))
             }
             close()
         } catch (_: CancellationException) {
@@ -78,16 +92,14 @@ fun GmailDetailFrame(enabled: Boolean, preview: ImageBitmap?, onBack: () -> Unit
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
             preview?.let { drawImage(it, dstSize = IntSize(size.width.toInt(), size.height.toInt())) }
-            drawRect(Color.Black, alpha = .12f * progress.value * (1f - collapse.value))
+            drawRect(Color.Black, alpha = .10f * progress.value)
         }
-        Box(Modifier.fillMaxSize().graphicsLayer {
+        Box(Modifier.fillMaxSize().onGloballyPositioned { bounds = androidx.compose.ui.geometry.Rect(it.positionInWindow(), it.size.toSize()) }.graphicsLayer {
             val p = progress.value
             scaleX = DetailBackGeometry.scale(p); scaleY = scaleX
-            translationX = DetailBackGeometry.horizontal(p, edge) * density * (1f - collapse.value)
-            shape = RetractingShape(DetailBackGeometry.radius(p) * density, collapse.value)
+            translationX = DetailBackGeometry.horizontal(p, edge) * density
+            shape = RoundedCornerShape(DetailBackGeometry.radius(p).dp)
             clip = true
-            // Keep text opaque until the final sliver, avoiding two overlapping calendars/titles.
-            alpha = (1f - (collapse.value - .8f) / .2f).coerceIn(0f, 1f)
-        }.testTag("detail-motion-frame")) { content(close) }
+        }.testTag("detail-motion-frame").drawWithContent { layer.record { this@drawWithContent.drawContent() }; drawLayer(layer) }) { content(close) }
     }
 }

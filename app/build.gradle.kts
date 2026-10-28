@@ -18,8 +18,8 @@ android {
         applicationId = "com.example.todo"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "0.4.2-$detailMotion"
+        versionCode = 8
+        versionName = if (detailMotion == "B") "0.4.3" else "0.4.3-A"
         buildConfigField("boolean", "CLASSIC_DETAIL_MOTION", (detailMotion == "A").toString())
         testInstrumentationRunner = "com.example.todo.LocalizedTestRunner"
     }

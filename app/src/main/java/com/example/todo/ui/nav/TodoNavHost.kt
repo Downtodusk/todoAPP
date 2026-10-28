@@ -1,6 +1,11 @@
 package com.example.todo.ui.nav
 
 import com.example.todo.BuildConfig
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -61,6 +66,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     val scope = rememberCoroutineScope()
     val reduced = LocalReducedMotion.current
     val classic = BuildConfig.CLASSIC_DETAIL_MOTION
+    val returning = remember { TaskReturnState() }
     val listLayer = rememberGraphicsLayer()
     var listPreview by remember { mutableStateOf<ImageBitmap?>(null) }
     var sharedTodoId by remember { mutableStateOf<Long?>(null) }
@@ -78,6 +84,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
             listPreview = if (!classic && !reduced && origin != null && listLayer.size.width > 0)
                 try { listLayer.toImageBitmap() } catch (e: kotlinx.coroutines.CancellationException) { throw e }
                 catch (_: Exception) { null } else null
+            returning.cancel()
             nav.navigate("detail/$id")
         } catch (e: kotlinx.coroutines.CancellationException) { throw e }
         catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_load_try_again)) }
@@ -150,9 +157,9 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
     val listTravel = with(LocalDensity.current) { 8.dp.roundToPx() }
     val markedDates = remember(state.todos, zone) { state.todos.filter { it.status == 0 }.mapNotNull { it.calendarDate(zone) }.toSet() }
     DetailSharedRoot(classic) {
-    CompositionLocalProvider(LocalSharedTodoId provides sharedTodoId) {
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        NavHost(nav, startDestination = "today",
+    CompositionLocalProvider(LocalSharedTodoId provides sharedTodoId, LocalTaskReturn provides if (!classic && !reduced) returning else null) {
+    Box(Modifier.fillMaxSize().onGloballyPositioned { returning.origin = it.positionInWindow(); returning.viewport = it.size.toSize() }.background(MaterialTheme.colorScheme.surface)) {
+        NavHost(nav, startDestination = "today", modifier = Modifier.semantics { if (returning.request != null) hideFromAccessibility() },
             enterTransition = { fadeIn(tween(Motion.DurationMedium, easing = Motion.Enter)) },
             exitTransition = { fadeOut(tween(Motion.DurationShort, easing = Motion.Exit)) },
             popEnterTransition = { fadeIn(tween(Motion.DurationMedium)) },
@@ -194,10 +201,11 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                 val id = entry.arguments!!.getLong("id")
                 val editor: AddViewModel = viewModel(factory = viewModelFactory { initializer { AddViewModel(container.todos, id, snapshots[id], snapshots.containsKey(id)) } })
                 val edit by editor.state.collectAsStateWithLifecycle()
+                var returningDeleted by remember { mutableStateOf(false) }
                 CompositionLocalProvider(LocalTodoVisibilityScope provides this) {
-                GmailDetailFrame(enabled = !classic && !reduced, preview = listPreview, onBack = {
+                GmailDetailFrame(enabled = !classic && !reduced, preview = listPreview, targetId = { id.takeUnless { edit.missing || returningDeleted } }, onBack = {
                     // A notification may open another entry while this return is still animating.
-                    if (nav.currentBackStackEntry == entry) nav.popBackStack()
+                    nav.currentBackStackEntry == entry && nav.popBackStack()
                 }) { close ->
                 LaunchedEffect(edit.saved) { if (edit.saved) { if (edit.savedWithReminder) permissionRequest++; close() } }
                 var detailMenu by remember { mutableStateOf(false) }
@@ -211,7 +219,7 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                                     catch (e: kotlinx.coroutines.CancellationException) { throw e }
                                     catch (_: Exception) { snackbar.showSnackbar(t(R.string.could_not_duplicate_try_again)) }
                                 } })
-                                DropdownMenuItem(text = { Text(t(R.string.delete)) }, onClick = { detailMenu = false; close(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else Motion.DurationMedium.toLong()); vm.delete(id) } })
+                                DropdownMenuItem(text = { Text(t(R.string.delete)) }, onClick = { detailMenu = false; returningDeleted = true; close(); scope.launch { delay(if (reduced) Motion.DurationShort.toLong() else 550L); vm.delete(id) } })
                                 if (edit.snapshot?.todo?.status == 0) {
                                     HorizontalDivider()
                                     listOf(t(R.string.snooze_10_minutes) to 600_000L, t(R.string.snooze_1_hour) to 3_600_000L, t(R.string.snooze_until_tomorrow) to -1L).forEach { (label, duration) ->
@@ -254,10 +262,11 @@ fun TodoNavHost(container: AppContainer, settings: UserSettings, openTodoId: Lon
                     onManual = { manualNote = it; add = true }, onBack = { importer.cancel(); nav.popBackStack() })
             }
         }
+        TaskReturnOverlay(returning)
         SnackbarHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.BottomCenter).navigationBarsPadding())
-    }
-    }
     }
     if (add) QuickAddSheet(container, settings.allDayMinute, onDismiss = { add = false },
         onSaved = { withReminder -> if (withReminder) permissionRequest++ }, onAi = { nav.navigate("ai") { launchSingleTop = true } }, initialNote = manualNote)
+    }
+    }
 }

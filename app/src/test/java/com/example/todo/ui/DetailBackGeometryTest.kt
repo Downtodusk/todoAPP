@@ -5,6 +5,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DetailBackGeometryTest {
+    @Test fun systemProgressIsVisibleEarlyAndEasesIntoItsLimit() {
+        assertEquals(0f, DetailBackGeometry.gestureProgress(0f), 0f)
+        assertEquals(.75f, DetailBackGeometry.gestureProgress(.3f), .001f)
+        assertEquals(1f, DetailBackGeometry.gestureProgress(1f), 0f)
+        var previous = 0f
+        for (i in 0..100) {
+            val value = DetailBackGeometry.gestureProgress(i / 100f)
+            assertTrue(value >= previous && value <= 1f); previous = value
+        }
+    }
     @Test fun extremeDragNeverShrinksPastNinetyPercent() {
         for (i in -10..110) {
             val progress = i / 100f

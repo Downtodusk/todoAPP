@@ -1,5 +1,14 @@
 package com.example.todo.ui.add
 
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.geometry.Rect
+import com.example.todo.ui.components.LocalTaskReturn
+import androidx.compose.foundation.background
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -40,7 +49,13 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
     val markedDates = remember(todos) { todos.filter { it.status == 0 }.mapNotNull { it.calendarDate(ZoneId.systemDefault()) }.toSet() }
     val maxHeight = (LocalConfiguration.current.screenHeightDp * .93f).dp
     val scope = rememberCoroutineScope()
-    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val returning = LocalTaskReturn.current
+    val cardLayer = rememberGraphicsLayer()
+    var cardBounds by remember { mutableStateOf(Rect.Zero) }
+    var requestClose by remember { mutableStateOf<() -> Unit>({}) }
+    val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { value ->
+        if (returning != null && value == SheetValue.Hidden) { requestClose(); false } else true
+    })
     val visibility = remember { MutableTransitionState(false) }
     var dismissInput by remember { mutableStateOf<() -> Unit>({}) }
     var imeVisible by remember { mutableStateOf(false) }
@@ -56,6 +71,15 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
         // Finish the IME resize before moving the sheet; otherwise its anchors change mid-exit.
         dismissInput()
         if (imeVisible) withTimeoutOrNull(700) { snapshotFlow { imeVisible }.first { !it } }
+        if (returning != null && cardLayer.size.width > 0) {
+            try {
+                val image = cardLayer.toImageBitmap()
+                if (returning.start(image, cardBounds, edit.savedId,
+                    navigate = { onDismiss(); true }, onFinished = afterClose)) return
+                onDismiss(); afterClose(); return
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { android.util.Log.w("TaskReturn", "Sheet capture unavailable", e); onDismiss(); afterClose(); return }
+        }
         if (reduced) {
             visibility.targetState = false
             snapshotFlow { visibility.isIdle && !visibility.currentState }.first { it }
@@ -63,6 +87,7 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
         onDismiss()
         afterClose()
     }
+    SideEffect { requestClose = { if (!closing) scope.launch { close() } } }
     LaunchedEffect(Unit) { visibility.targetState = true }
     LaunchedEffect(edit.saved) { if (edit.saved) close { onSaved(edit.savedWithReminder) } }
     val content: @Composable () -> Unit = {
@@ -81,7 +106,16 @@ fun QuickAddSheet(container: AppContainer, defaultMinute: Int, onDismiss: () -> 
     }
     val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     if (!reduced) {
-        ModalBottomSheet(onDismissRequest = { if (!closing) { closing = true; onDismiss() } }, sheetState = sheet, shape = shape, containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) { content() }
+        ModalBottomSheet(onDismissRequest = { if (returning != null) requestClose() else if (!closing) { closing = true; onDismiss() } },
+            sheetState = sheet, shape = shape, containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp,
+            dragHandle = null) {
+            Column(Modifier.fillMaxWidth().onGloballyPositioned { cardBounds = Rect(it.positionInWindow(), it.size.toSize()) }
+                .drawWithContent { cardLayer.record { this@drawWithContent.drawContent() }; drawLayer(cardLayer) }
+                .background(MaterialTheme.colorScheme.surface), horizontalAlignment = Alignment.CenterHorizontally) {
+                BottomSheetDefaults.DragHandle()
+                content()
+            }
+        }
     } else {
         // Material 3 1.4 does not publicly expose sheet motion specs. Keep the same modal
         // editor with an opacity-only presentation instead of reaching into internal APIs.

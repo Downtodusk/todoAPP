@@ -115,3 +115,10 @@
 - Deliver two interchangeable 0.4.2 builds. A retains the 0.4.0 shared-container trajectory and timing, while fixing the heavy editor at its lookahead layout size. B retains 0.4.1 entry, adds bounded predictive-back card scaling with rounded corners, then vertically retracts on committed return. Cancellation restores the existing draft.
 - Both use the same application ID, versionCode 7 and existing signing identity per build type, so A/B can replace each other without clearing data. Build property `detailMotion=A|B` selects behavior; default B is an implementation default for the comparison, not a user selection of the final preferred animation. No persisted preference is changed.
 - Reduced motion takes priority. Device work remains deferred; use the isolated emulator for regression and controlled comparisons, with no claim of OPPO gesture smoothness until user feedback. The known deferred boot-reminder issue is outside this change.
+
+## User-confirmed return handoff, 2026-10-28
+
+- Improve B as 0.4.3: bounded shrink and rounded corners, followed by detail content moving downward and fading completely out; only then fade in the actual row content and land on its current position. The user explicitly selected opacity only, without blur.
+- A saved task returns to its real, fully visible row, including a newly created task. Cancelled creation, deletion, filtering or an unavailable visible target returns to the center without scrolling the list. Capture current row content rather than reconstructing it from stale editor data.
+- Keep 0.4.1 entry and reduced-motion behavior. Native predictive-back progress is amplified within a bounded 10% shrink; button Back also visibly shrinks. An already shrunken gesture proceeds directly into retraction instead of pausing for the full button prelude.
+- Verify System UI edge input in the isolated emulator as well as dispatcher regression coverage. Emulator frames and screenshots do not establish OPPO hardware smoothness. No user-phone operation or deferred boot-reminder fix is included.

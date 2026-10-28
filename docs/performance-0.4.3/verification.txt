@@ -1,0 +1,19 @@
+0.4.3 verification; isolated API 36 emulator, no user phone.
+Full suite precedes only the adaptive prelude duration adjustment; final focused/narrow checks follow it.
+Host JVM: 60 total, 59 passed, 1 opt-in network evaluation skipped. Lint: 0 errors.
+
+acceptance.log
+INSTRUMENTATION_STATUS_CODE: -4
+Time: 101.998
+OK (46 tests)
+
+native-final.log
+Time: 15.597
+OK (4 tests)
+
+narrow-final.log
+Time: 22.206
+OK (5 tests)
+
+build-delivery.log
+BUILD SUCCESSFUL in 1m 9s

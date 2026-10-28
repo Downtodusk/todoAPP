@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class EditorState(val loading: Boolean = false, val snapshot: TodoSnapshot? = null, val saving: Boolean = false,
-    val error: String? = null, val saved: Boolean = false, val missing: Boolean = false, val savedWithReminder: Boolean = false)
+    val error: String? = null, val saved: Boolean = false, val missing: Boolean = false, val savedWithReminder: Boolean = false, val savedId: Long? = null)
 
 class AddViewModel(private val repository: TodoRepository, private val id: Long?,
     initialSnapshot: TodoSnapshot? = null, initialLoaded: Boolean = false) : ViewModel() {
@@ -29,7 +29,7 @@ class AddViewModel(private val repository: TodoRepository, private val id: Long?
         if (mutable.value.saving) return
         mutable.update { it.copy(saving = true, error = null) }
         viewModelScope.launch {
-            try { repository.save(todo, reminders); mutable.update { it.copy(saving = false, saved = true,
+            try { val savedId = repository.save(todo, reminders); mutable.update { it.copy(saving = false, saved = true, savedId = savedId,
                 savedWithReminder = (reminders ?: it.snapshot?.reminders.orEmpty()).isNotEmpty() && todo.status == 0) } }
             catch (e: CancellationException) { throw e }
             catch (e: IllegalArgumentException) { mutable.update { it.copy(saving = false, error = e.message ?: t(R.string.check_your_input)) } }

@@ -104,7 +104,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
         }
     }
     val offset = swipe.offset.takeIf { it.isFinite() } ?: 0f
-    Box(modifier.testTag("todo-row-${todo.id}").clipToBounds().layout { measurable, constraints ->
+    Box(modifier.taskReturnAnchor(todo.id).testTag("todo-row-${todo.id}").clipToBounds().layout { measurable, constraints ->
         val placeable = measurable.measure(constraints)
         layout(placeable.width, (placeable.height * if (reduced) 1f else disappear.value).roundToInt()) { placeable.placeRelative(0, 0) }
     }) {

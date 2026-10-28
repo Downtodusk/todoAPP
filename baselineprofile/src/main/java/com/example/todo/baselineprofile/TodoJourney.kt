@@ -8,8 +8,8 @@ import java.util.regex.Pattern
 internal const val Target = "com.example.todo.benchmark"
 internal fun seed() {
     val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-    device.executeShellCommand("am start -W -n $Target/com.example.todo.benchmark.BenchmarkSeedActivity")
-    check(device.wait(Until.hasObject(By.text("性能测试数据已就绪")), 10_000))
+    val launch = device.executeShellCommand("am start -W -S -n $Target/com.example.todo.benchmark.BenchmarkSeedActivity")
+    check(device.wait(Until.hasObject(By.text("性能测试数据已就绪")), 10_000)) { "Fixture did not open: $launch" }
     device.pressHome()
 }
 internal fun MacrobenchmarkScope.journey() {
@@ -24,7 +24,7 @@ internal fun MacrobenchmarkScope.journey() {
     check(ui.wait(Until.gone(By.text(Pattern.compile("记下一件事|A new task"))), 5_000))
     repeat(3) { ui.swipe(ui.displayWidth / 2, ui.displayHeight * 4 / 5, ui.displayWidth / 2, ui.displayHeight / 3, 20) }
     repeat(3) { ui.swipe(ui.displayWidth / 2, ui.displayHeight / 3, ui.displayWidth / 2, ui.displayHeight * 4 / 5, 20) }
-    val row = ui.wait(Until.findObject(By.text("性能样例 01")), 5_000)
+    val row = ui.wait(Until.findObject(By.text(Pattern.compile("性能样例 [0-9]{2}"))), 5_000)
     checkNotNull(row).click()
     check(ui.wait(Until.hasObject(By.text(Pattern.compile("待办详情|Task details"))), 5_000))
     ui.pressBack()

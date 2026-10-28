@@ -129,7 +129,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
         }
         Column(Modifier.fillMaxWidth().offset { IntOffset((swipe.offset.takeIf { it.isFinite() } ?: 0f).roundToInt(), 0) }
             .anchoredDraggable(swipe, Orientation.Horizontal, enabled = !busy, flingBehavior = fling)
-            .todoSharedBounds(todo.id).background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface)
             .graphicsLayer { scaleX = scale; scaleY = scale; alpha = disappear.value }
             .clickable(enabled = !busy, interactionSource = interactions, indication = ripple()) { if (abs(offset) > 1f) scope.launch { swipe.animateTo(RowAction.Closed) } else onDetail(todo.id) }
             .semantics { customActions = listOf(
@@ -142,7 +142,7 @@ fun TodoRow(todo: TodoEntity, zone: ZoneId, onDetail: (Long) -> Unit,
                     Text(dated.format(DateTimeFormatter.ofPattern("HH:mm")), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = LocalEditorialFont.current, fontSize = 18.sp, lineHeight = 24.sp), color = MaterialTheme.colorScheme.onSurface)
                     if (todo.calendarDate(zone) != LocalDate.now(zone)) Text(dated.format(DateTimeFormatter.ofPattern("M/d")), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                else Spacer(Modifier.width(timeColumnWidth))
+                else if (!completed) Spacer(Modifier.width(timeColumnWidth))
                 val outline = MaterialTheme.colorScheme.outline
                 val checkedColor = MaterialTheme.colorScheme.onSurfaceVariant
                 val checkInk = MaterialTheme.colorScheme.surface

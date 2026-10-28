@@ -115,6 +115,8 @@ class PersonalizationTest {
         instrumentation.uiAutomation.executeShellCommand("pm grant com.example.todo android.permission.POST_NOTIFICATIONS").close()
         Assert.assertTrue(app.notifications.show(todo, ReminderEntity(todoId = todo.id, triggerAt = System.currentTimeMillis())))
         val manager = compose.activity.getSystemService(NotificationManager::class.java)
+        // notify() queues delivery in system_server; do not assume an immediate active record.
+        compose.waitUntil(5_000) { manager.activeNotifications.any { it.tag == "todo-${todo.id}" } }
         val notification = manager.activeNotifications.first { it.tag == "todo-${todo.id}" }.notification
         Assert.assertEquals("Complete", notification.actions[0].title.toString())
         Assert.assertEquals("Snooze 10 minutes", notification.actions[1].title.toString())

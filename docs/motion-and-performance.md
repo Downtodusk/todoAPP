@@ -7,8 +7,8 @@ The user deferred further phone operations on 2026-10-27 and will download APKs 
 - Left swipe reveals Complete/Reopen, right swipe reveals Delete. Releasing the gesture never mutates data; the user taps the exposed action to execute it. Tapping the row closes the tray. Threshold crossing retains haptic feedback; completion/deletion retain revision protection and undo.
 - Checkbox completion draws the check (200 ms), adds the title strike (150 ms), then fades/collapses (150 ms). Database mutation follows feedback; cancellation of feedback must not discard the accepted action. Stable list IDs retain item placement animation.
 - Rows use ripple and 0.97 press scale. FAB fades while the quick-add sheet is open; successful save hides the sheet before removing it.
-- List/detail containers share a remeasured transition; text is no longer scaled through nested shared title bounds. Detail snapshots are fetched before starting navigation; separate todo IDs retain separate navigation entries. System predictive back uses Navigation Compose and a seekable scale/fade transition.
-- Settings' reduced-motion choice takes priority; automatic mode checks `isLowRamDevice`. Reduced mode disables shared bounds/press scale/collapse and uses fades. Loading placeholders are static in reduced mode; the same shimmer component is available for AI import.
+- Since 0.4.1, list/detail pages keep fixed layout sizes and use placement/alpha transitions (24dp detail, 8dp list; 220ms forward, 180ms return). The full-editor shared remeasurement and page scaling are removed. Fade-through timing avoids overlapping text. Detail snapshots are fetched before navigation; separate todo IDs retain separate editor entries. Navigation Compose supplies the seekable pop transition; hardware predictive-back acceptance remains pending.
+- Settings' reduced-motion choice takes priority; automatic mode checks `isLowRamDevice`. Reduced mode disables page translation/press scale/collapse and uses fades. Loading placeholders are static in reduced mode; the same shimmer component is available for AI import.
 
 ## Device acceptance, all pending
 
@@ -54,3 +54,9 @@ The benchmark script also records the isolated target's foreground idle PSS/RSS 
 | App baseline/startup profile | Collect actual executed paths and rebuild | Not collected; no fabricated profile files |
 
 Host compilation and the APK's library-contributed profiles do not establish the app's baseline profile or performance acceptance.
+
+## 0.4.1 focused emulator comparison
+
+`DetailTransitionBenchmark` measures only repeated list/detail navigation with `CompilationMode.Full()`. It is separate from the profile-required full journey above. Both runner variants now explicitly use the Debug signing configuration; their previous assemble-only checks did not prove installability. Fixture preparation restarts only `.benchmark` and selects a visible synthetic row without assuming insertion order.
+
+The API 36 SwiftShader emulator A/B comparison, actual frame metrics, excluded setup failures and rendering samples are recorded in [ui-fixes-0.4.1.md](ui-fixes-0.4.1.md). This is engineering evidence for this transition change, not phone frame-rate acceptance or a generated Baseline Profile.

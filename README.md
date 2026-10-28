@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前 **0.4.0** 对齐全天／定时事项列，放大时间与菜单图标，加入时间滚轮、中文／英文切换和个性化配色；保留思源宋体和原有交互。主机构建及独立模拟器验证记录见 [本轮功能说明与实际渲染截图](docs/personalization-0.4.0.md)。真机体验、提醒兼容性和性能仍需后续反馈，不能将开发包视为全部验收通过。
+当前 **0.4.1** 取消已完成事项的时间留白，并将详情进入／返回改为固定尺寸的短距离移动与淡入淡出，减少整页重复布局。保留时间滚轮、中英文、个性化配色及其他交互；见 [本轮修复与验证记录](docs/ui-fixes-0.4.1.md)。真机体验、提醒兼容性和性能仍需后续反馈，不能将开发包视为全部验收通过。
 
 ## 构建
 
@@ -17,7 +17,7 @@ source scripts/android-env.sh
 
 ## 安装开发包
 
-已有此前测试安装时，下载 `dist/todo-0.4.0-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.4.0-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
+已有此前测试安装时，下载 `dist/todo-0.4.1-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.4.1-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
 
 原始 Debug 构建输出：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
 

@@ -1,0 +1,45 @@
+{
+  "environment": "API 36 x86_64 emulator; SwiftShader; 1080x2400; 420dpi; fontScale=1.0",
+  "scope": "30 list/detail round trips per version; 10 iterations; 3 round trips each",
+  "build": "R8, non-debuggable .benchmark target; CompilationMode.Full; same runner APK",
+  "limitation": "Single emulator A/B. Not a phone FPS result, baseline-profile result, or hardware acceptance.",
+  "beforeSourceCommit": "d2405c18e669faf2f6da7367903d7ca24d9abcf9",
+  "before": {
+    "version": "0.4.0",
+    "apkSha256": "89e12818f99eec1bb112e83543d91d76472575fbd4610a88b88d227910c9a19b",
+    "frameCount": 973.0,
+    "sampledMetrics": {
+      "frameDurationCpuMs": {
+        "P50": 44.99274,
+        "P90": 75.82174700000002,
+        "P95": 80.40664999999998,
+        "P99": 86.4455706
+      },
+      "frameOverrunMs": {
+        "P50": 43.663823,
+        "P90": 88.005427,
+        "P95": 96.0331726,
+        "P99": 107.7177144
+      }
+    }
+  },
+  "after": {
+    "version": "0.4.1",
+    "apkSha256": "6d7e69ae6c06dff17915a494620641fefcfca9e2060ed769c7dc8374d206bcc8",
+    "frameCount": 832.0,
+    "sampledMetrics": {
+      "frameDurationCpuMs": {
+        "P50": 24.3222065,
+        "P90": 36.1754524,
+        "P95": 40.7710649,
+        "P99": 66.04858054999974
+      },
+      "frameOverrunMs": {
+        "P50": 9.305675,
+        "P90": 28.8546274,
+        "P95": 35.36379519999999,
+        "P99": 61.67134329999983
+      }
+    }
+  }
+}

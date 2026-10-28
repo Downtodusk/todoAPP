@@ -240,6 +240,8 @@ app/src/main/java/com/example/todo/
 |---|---|
 | `DurationShort` | 150ms |
 | `DurationMedium` | 300ms |
+| 详情进入 / 内容交接延时 | 190ms / 75ms（0.4.4，用户确认动效后自主小幅提速） |
+| 返回补足缩小 / 收回 / 取消恢复 | 最多 90ms / 290ms / 150ms；手势已缩小时按剩余进度缩短补足阶段 |
 | 曲线 | `CubicBezierEasing(0.2f, 0f, 0f, 1f)`（Emphasized decelerate）用于进入；`CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)` 用于退出 |
 | 交互 spring | `spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)` |
 
@@ -247,7 +249,7 @@ app/src/main/java/com/example/todo/
 
 | ID | 场景 | 实现要求 | AC |
 |---|---|---|---|
-| M-1 | 列表项 → 详情 | `SharedTransitionLayout` + `sharedBounds`（Container Transform）：容器按过渡边界重新布局为详情页，不对文字做整体放大，文字保持原字号，通过淡入淡出衔接 | 进入/返回均无闪烁，帧率不低于 60fps（中端机） |
+| M-1 | 列表项 → 详情 | 按用户验收通过的 0.4.3 B 方案：固定布局淡入平移进入；返回先有限等比缩小并增加圆角，详情下移并完全淡出后，实际条目内容仅以透明度渐显，容器收回当前可见条目处。未创建或目标不可见时收回中央，不自动滚动。动画使用固定画面层，避免逐帧重排表单 | 用户已确认流程与观感；进入/返回均无闪烁，帧率不低于 60fps（中端机）的测量验收仍独立待完成 |
 | M-2 | 系统返回手势 | Manifest `android:enableOnBackInvokedCallback="true"`；使用 Compose Navigation 的 Predictive Back 支持，手势过程中页面随手指缩放/位移 | Android 14+ 设备上拖动手势可预览上一页，取消手势可回弹 |
 | M-3 | FAB → QuickAddSheet | FAB 容器变形展开为 Sheet（或 FAB 淡出 + Sheet 弹出，若容器变形不稳定则降级） | 无跳变 |
 | M-4 | 左/右滑 | `AnchoredDraggable` 展开一级操作菜单；左滑露出完成／重新打开，右滑露出删除；只有点击菜单按钮才执行；越过展开阈值触发 `HapticFeedbackType.LongPress` | 滑动松手不修改数据；点击按钮执行后可撤销；未过阈值则回弹 |

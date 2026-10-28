@@ -1,0 +1,65 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 5507085 Realtime: 5507085
+
+** MEMINFO in pid 21287 [com.example.todo.benchmark] **
+                   Pss  Private  Private     Swap      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    12026    11960        0        0    15712    25168    19162     1626
+  Dalvik Heap    26668    26504        0        0    34244    52315    27739    24576
+ Dalvik Other      724      708        0        0     1616                           
+        Stack      544      544        0        0      552                           
+       Ashmem       14        0        0        0      608                           
+    Other dev       14        0       12        0      324                           
+     .so mmap     2353      284        4        0    39580                           
+    .jar mmap     1216        0        0        0    32936                           
+    .apk mmap      216        0        0        0     1508                           
+    .dex mmap    10244       36    10192        0    11044                           
+    .oat mmap      497        0        0        0    11328                           
+    .art mmap     1249      560       20        0    32048                           
+   Other mmap      156       32       36        0     1912                           
+      Unknown     3128     3120        0        0     4040                           
+        TOTAL    59049    43748    10264        0   187452    77483    46901    26202
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    27084                          66292
+         Native Heap:    11960                          15712
+                Code:    10532                          96412
+               Stack:      544                            552
+            Graphics:        0                              0
+       Private Other:     3892
+              System:     5037
+             Unknown:                                    8484
+ 
+           TOTAL PSS:    59049            TOTAL RSS:   187452      TOTAL SWAP (KB):        0
+ 
+ Objects
+               Views:       11         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:        9        AssetManagers:        0
+       Local Binders:       15        Proxy Binders:       50
+       Parcel memory:        5         Parcel count:       22
+    Death Recipients:        0             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+   Bitmap (malloced):       11                             38
+    Other (malloced):      567                             52
+ Other (nonmalloced):       71                             53
+ 
+ SQL
+         MEMORY_USED:      199
+  PAGECACHE_OVERFLOW:       67          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4       44             84    14    45     5  /data/user/0/com.example.todo.benchmark/databases/todo.db
+         4        8                    0     0     0    (attached) temp
+         4       44             67     3    22     4  /data/user/0/com.example.todo.benchmark/databases/todo.db (1)
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+             17            71            88  /data/user/0/com.example.todo.benchmark/databases/todo.db

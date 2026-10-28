@@ -85,7 +85,7 @@ fun GmailDetailFrame(enabled: Boolean, preview: ImageBitmap?, targetId: () -> Lo
             close()
         } catch (_: CancellationException) {
             // A cancelled gesture must keep the draft, scroll and destination intact.
-            recovery = scope.launch { progress.animateTo(0f, tween(180, easing = Motion.Enter)) }
+            recovery = scope.launch { progress.animateTo(0f, tween(Motion.DurationDetailRecovery, easing = Motion.Enter)) }
         }
     }
     BackHandler(enabled = closing) { /* Ignore repeated Back while the accepted pop finishes. */ }

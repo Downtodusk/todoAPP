@@ -1,0 +1,93 @@
+INSTRUMENTATION_STATUS: class=com.example.todo.baselineprofile.BaselineProfileGenerator
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+com.example.todo.baselineprofile.BaselineProfileGenerator:
+INSTRUMENTATION_STATUS: test=startup
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: additionalTestOutputFile_BaselineProfileGenerator_startup-startup-prof.txt=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_startup-startup-prof.txt
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: additionalTestOutputFile_BaselineProfileGenerator_startup-startup-prof-2026-10-28-07-57-56.txt=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_startup-startup-prof-2026-10-28-07-57-56.txt
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: android.studio.display.benchmark=BaselineProfileGenerator_startup
+Total run time Ns: 115845893114.
+Baseline profile [results](file://BaselineProfileGenerator_startup-startup-prof-2026-10-28-07-57-56.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_startup-startup-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v2display.benchmark=BaselineProfileGenerator_startup
+Total run time Ns: 115845893114.
+Baseline profile [results](file://BaselineProfileGenerator_startup-startup-prof-2026-10-28-07-57-56.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_startup-startup-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v2display.benchmark.outputDirPath=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect
+INSTRUMENTATION_STATUS: android.studio.v3display.benchmark=BaselineProfileGenerator_startup
+Total run time Ns: 115845893114.
+Baseline profile [results](file://BaselineProfileGenerator_startup-startup-prof-2026-10-28-07-57-56.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_startup-startup-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v3display.benchmark.outputDirPath=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: class=com.example.todo.baselineprofile.BaselineProfileGenerator
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=startup
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.todo.baselineprofile.BaselineProfileGenerator
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=interactions
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: additionalTestOutputFile_BaselineProfileGenerator_interactions-baseline-prof.txt=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_interactions-baseline-prof.txt
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: additionalTestOutputFile_BaselineProfileGenerator_interactions-baseline-prof-2026-10-28-08-02-05.txt=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_interactions-baseline-prof-2026-10-28-08-02-05.txt
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: android.studio.display.benchmark=BaselineProfileGenerator_interactions
+Total run time Ns: 247467056259.
+Baseline profile [results](file://BaselineProfileGenerator_interactions-baseline-prof-2026-10-28-08-02-05.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_interactions-baseline-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v2display.benchmark=BaselineProfileGenerator_interactions
+Total run time Ns: 247467056259.
+Baseline profile [results](file://BaselineProfileGenerator_interactions-baseline-prof-2026-10-28-08-02-05.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_interactions-baseline-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v2display.benchmark.outputDirPath=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect
+INSTRUMENTATION_STATUS: android.studio.v3display.benchmark=BaselineProfileGenerator_interactions
+Total run time Ns: 247467056259.
+Baseline profile [results](file://BaselineProfileGenerator_interactions-baseline-prof-2026-10-28-08-02-05.txt)
+
+To copy the profile use:
+adb -e pull "/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect/BaselineProfileGenerator_interactions-baseline-prof.txt" .
+
+INSTRUMENTATION_STATUS: android.studio.v3display.benchmark.outputDirPath=/sdcard/Android/media/com.example.todo.baselineprofile/20261028T075559Z-collect
+INSTRUMENTATION_STATUS_CODE: 2
+INSTRUMENTATION_STATUS: class=com.example.todo.baselineprofile.BaselineProfileGenerator
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=2
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=interactions
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 367.215
+
+OK (2 tests)
+
+
+INSTRUMENTATION_CODE: -1

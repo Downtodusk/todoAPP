@@ -82,7 +82,7 @@ The user chose Windows USB plus SSH ADB forwarding, now working on Linux loopbac
 ## Remaining milestones / acceptance
 
 - M2: optional system alarm mode passed lock/process-death and Recents observations. Reboot recovery failed and its fix is deferred by the user; Doze, clock/timezone change and battery-saver device scenarios are not run by user choice. M2 is not fully accepted; the user authorized continuing other tests.
-- M3: execute motion/gesture checks, collect measured baseline profiles and run frame/startup benchmarks when device testing resumes.
+- M3: user accepted the 0.4.3 motion; 0.4.4 modestly accelerates it. Measured app profiles are now collected and packaged; remaining work is physical-device frame/startup acceptance, including the specified scrolling frame budget.
 - M4: execute new UI/Keystore/batch tests on a device and evaluate real BYOK provider behavior when requested.
 - M5: resume device matrix and startup/frame/memory measurement; manually validate diagnostic export and signed Release installation when the user is available. Signed APK delivery and crash-log implementation are complete.
 
@@ -135,3 +135,12 @@ All milestones now have implementation or test tooling, but full acceptance is *
 - Render fixed image layers across navigation disposal; capture only at handoff, suppress competing list placement, keep the real row hidden until landing, and wait for keyboard dismissal before capture. Gesture cancellation retains the draft; old returns cannot pop newly opened notification details.
 - Final host: 59 JVM passes / 1 real-model skip; Lint zero errors; Debug/test, R8 benchmark and signed Release builds pass. Full API 36 suite: 45 passes / 1 manual reminder-fixture skip, including real System UI edge input. After the final adaptive prelude timing adjustment, native/dispatcher checks pass 4/4 and narrow 360dp / 130% font checks pass 5/5. Emulator settings restored.
 - Version 0.4.3 / code 8 retains the same package, signing identities and Room v1. See [screenshots, measured comparison and limitations](detail-motion-0.4.3.md). No phone operations, Baseline Profile generation, real provider calls or deferred boot-reminder fixes are included; hardware smoothness remains subject to user feedback.
+
+
+## 0.4.4 — accepted motion accelerated; T3.4 app profiles
+
+- User accepted the 0.4.3 return motion. Preserve its geometry/content handoff and shorten entry 220 → 190ms and maximum return 450 → 380ms; cancelled gestures recover in 150ms. Motion durations are centralized; unrelated feedback and reduced motion remain unchanged.
+- T3.4 now has actual emulator-generated baseline/startup rules, not only assembled tooling. Both collections passed. App rules survive R8 rewriting and compiled profiles are included in Release; package metadata records source hashes. T5.2 profile-required startup/interaction measurements passed as executable checks on the isolated emulator; this is not hardware performance acceptance. TTID median/P95 826.66/978.17ms, full-journey CPU frame P95 45.85ms, idle PSS median 57.84MiB. The 500ms/60fps/scrolling budget remains unverified on hardware.
+- Repaired the profile variant's Kotlin fixture source configuration and made the scroll/detail test journey select a fully visible, stable row before tapping. Original failed collection logs and diagnostic screenshots remain locally available; no failure was converted to a pass or hidden with click retries.
+- Host: 59 JVM passes / 1 opt-in real-provider skip, Lint zero errors; Debug/test/Profile/benchmark/signed Release build. Final focused emulator UI: 9/9 passes, including real System UI back, cancellation, exact row landing, creation/cancel, concurrent notification and long-title/reduced-motion checks. [Provenance and measurements](performance-0.4.4.md).
+- Version 0.4.4 / code 9, same package/schema/signing identities. The user-phone and real-provider boundaries remain; deferred OPPO reboot behavior is unchanged. All milestones are still not fully accepted.

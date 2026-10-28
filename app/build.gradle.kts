@@ -18,8 +18,8 @@ android {
         applicationId = "com.example.todo"
         minSdk = 26
         targetSdk = 37
-        versionCode = 8
-        versionName = if (detailMotion == "B") "0.4.3" else "0.4.3-A"
+        versionCode = 9
+        versionName = if (detailMotion == "B") "0.4.4" else "0.4.4-A"
         buildConfigField("boolean", "CLASSIC_DETAIL_MOTION", (detailMotion == "A").toString())
         testInstrumentationRunner = "com.example.todo.LocalizedTestRunner"
     }
@@ -62,7 +62,7 @@ android {
         }
     }
     sourceSets.getByName("profile") {
-        java.srcDir("src/benchmark/java")
+        kotlin.srcDir("src/benchmark/java")
         manifest.srcFile("src/benchmark/AndroidManifest.xml")
     }
     sourceSets.getByName("androidTest").assets.srcDir("schemas")

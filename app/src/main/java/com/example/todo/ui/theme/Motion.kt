@@ -7,9 +7,12 @@ object Motion {
     const val DurationShort = 150
     const val DurationMedium = 300
     const val DurationCheck = 200
-    const val DurationDetailEnter = 220
+    const val DurationDetailEnter = 190
     const val DurationDetailReturn = 180
-    const val DurationDetailHandoff = 90
+    const val DurationDetailHandoff = 75
+    const val DurationDetailShrink = 90
+    const val DurationDetailMorph = 290
+    const val DurationDetailRecovery = 150
     val Enter = CubicBezierEasing(0.2f, 0f, 0f, 1f)
     val Exit = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
     fun <T> interaction(): SpringSpec<T> = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)

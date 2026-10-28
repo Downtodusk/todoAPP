@@ -122,3 +122,12 @@
 - A saved task returns to its real, fully visible row, including a newly created task. Cancelled creation, deletion, filtering or an unavailable visible target returns to the center without scrolling the list. Capture current row content rather than reconstructing it from stale editor data.
 - Keep 0.4.1 entry and reduced-motion behavior. Native predictive-back progress is amplified within a bounded 10% shrink; button Back also visibly shrinks. An already shrunken gesture proceeds directly into retraction instead of pausing for the full button prelude.
 - Verify System UI edge input in the isolated emulator as well as dispatcher regression coverage. Emulator frames and screenshots do not establish OPPO hardware smoothness. No user-phone operation or deferred boot-reminder fix is included.
+
+
+## User-accepted motion and continued plan, 2026-10-28
+
+- The user accepted the 0.4.3 motion and delegated a modest speed increase. Version 0.4.4 keeps the trajectory, 90% scale floor, 55% content handoff and center fallback; entry is 220 → 190ms, shrink prelude 110 → 90ms, retraction 340 → 290ms, cancellation recovery 180 → 150ms. Gesture progress still follows the finger. These durations live in Motion.kt; unrelated check/swipe/reduced-motion timing is unchanged.
+- Continue T3.4 and T5.2 using only the isolated emulator. Collect actual app startup and interaction profiles, rebuild with them and require profile installation in measurement. Profile generation is executable work; it does not establish the physical-device startup or frame budget.
+- The first profile collection exposed a missing Kotlin seed Activity in the unminified profile build. AGP's Kotlin source directory must be declared explicitly when sharing the benchmark fixture source; the manifest alone and successful assembly were insufficient. Fix is limited to performance tooling; the fixture remains absent from normal Debug/Release.
+- Repeated long-journey collection exposed an occasional missed detail click after scrolling. Wait for fresh, fully visible row bounds to remain stable before a normal-duration tap; do not retry failed navigation. Retain failure screenshots/hierarchies from the synthetic benchmark package. This changes only the test harness.
+- Phone tests, OPPO reboot recovery and real-provider evaluation retain the prior deferred/opt-in boundaries. No new network service, dependency, schema or signing identity is introduced.

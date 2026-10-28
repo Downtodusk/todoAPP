@@ -6,7 +6,7 @@ import org.junit.Test
 
 class TaskReturnPhasesTest {
     @Test fun anAlreadyShrunkGestureDoesNotPauseBeforeRetracting() {
-        assertEquals(110, TaskReturnPhases.remainingPrelude(0f))
+        assertEquals(90, TaskReturnPhases.remainingPrelude(0f))
         assertEquals(0, TaskReturnPhases.remainingPrelude(1f))
         assertTrue(TaskReturnPhases.remainingPrelude(.75f) < 30)
     }

@@ -2,7 +2,7 @@
 
 原生 Kotlin / Jetpack Compose 离线待办，按 [实施规格](todo-app-spec.md) 与 [已确认设计](design/selected-direction.md) 开发。
 
-当前 **0.4.3** 按确认的 B 版方案返回：先明显缩小与圆角变化，详情下移并完全淡出后，再渐显条目并收回其真实位置；未创建或目标不可见时回到中央。保留原进入效果及现有功能，见 [方案与验证记录](docs/detail-motion-0.4.3.md)。真机手感及其他未完成验收仍待用户反馈。
+当前 **0.4.4** 在用户已认可的动效基础上小幅提速：进入 190ms，返回最多 380ms，保留缩小、详情下移淡出、条目渐显并落回原位置的完整顺序。继续推进规划中的 Baseline Profile 与性能验证，见 [本轮记录](docs/performance-0.4.4.md)。真机性能及其他未完成验收仍按独立项目记录。
 
 ## 构建
 
@@ -17,7 +17,7 @@ source scripts/android-env.sh
 
 ## 安装开发包
 
-已有此前测试安装时，下载 `dist/todo-0.4.3-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.4.3-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
+已有此前测试安装时，下载 `dist/todo-0.4.4-debug.apk` 覆盖更新，保留数据。全新安装可选 `dist/todo-0.4.4-release.apk`（独立发布签名）。两种签名不能互相覆盖，请不要为切换包而卸载重要数据。详见[签名与诊断交付](docs/release-and-diagnostics.md)。
 
 原始 Debug 构建输出：`app/build/outputs/apk/debug/app-debug.apk`，包名 `com.example.todo`，最低 Android 8.0（API 26）。
 

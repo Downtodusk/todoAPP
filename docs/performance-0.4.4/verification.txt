@@ -1,0 +1,5 @@
+motion-regression.log
+Time: 47.596
+OK (9 tests)
+build-profiled.log
+BUILD SUCCESSFUL in 1m 50s

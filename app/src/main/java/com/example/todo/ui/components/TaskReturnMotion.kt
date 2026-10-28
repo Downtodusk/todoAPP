@@ -84,8 +84,8 @@ fun Modifier.taskReturnAnchor(id: Long): Modifier {
 }
 
 internal object TaskReturnPhases {
-    const val PreludeMs = 110
-    const val MorphMs = 340
+    const val PreludeMs = com.example.todo.ui.theme.Motion.DurationDetailShrink
+    const val MorphMs = com.example.todo.ui.theme.Motion.DurationDetailMorph
     const val Handoff = .55f
     fun remainingPrelude(progress: Float) = (PreludeMs * (1f - progress.coerceIn(0f, 1f))).roundToInt()
     fun detailAlpha(fraction: Float) = (1f - fraction / Handoff).coerceIn(0f, 1f)

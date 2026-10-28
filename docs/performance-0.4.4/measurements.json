@@ -1,0 +1,65 @@
+{
+  "environment": "API 36 x86_64 SwiftShader; 420 dpi, font scale 1.0, 3-button navigation; emulator, not device acceptance",
+  "compilation": "Partial, BaselineProfileMode.Require",
+  "apkSha256": "f1326ef41112efed9c63df0ffaa7418c4ccf348cdc182d187106da12903ed167",
+  "coldStartup": {
+    "timeToFullDisplayMs": {
+      "runs": 10,
+      "median": 896.04124,
+      "p95LinearInterpolated": 1084.6219130999998
+    },
+    "timeToInitialDisplayMs": {
+      "runs": 10,
+      "median": 826.663749,
+      "p95LinearInterpolated": 978.1689541499998
+    }
+  },
+  "interactions": {
+    "iterations": 5,
+    "journey": "sheet open/close, 6 scroll gestures, detail open/return; stable-row wait before tap",
+    "sampledMetrics": {
+      "frameDurationCpuMs": {
+        "P50": 22.250437,
+        "P95": 45.84763579999999,
+        "P99": 92.99852312
+      },
+      "frameOverrunMs": {
+        "P50": 7.580422,
+        "P95": 60.028549,
+        "P99": 125.61970036000002
+      }
+    },
+    "frames": 1429,
+    "framesWithPositiveOverrun": 1134,
+    "positiveOverrunFraction": 0.7935619314205739
+  },
+  "limitations": [
+    "No before/after comparison; no measured speedup claim.",
+    "Startup observations on emulator do not pass the midrange-device 500 ms target.",
+    "Positive overrun fraction covers the whole journey; it is not the scrolling-only dropped-frame acceptance metric or FPS.",
+    "R8 benchmark APK and delivered Debug APK are not performance-equivalent."
+  ],
+  "idleMemory": {
+    "method": "Foreground idle; wait 30 seconds, then 3 samples 10 seconds apart; isolated synthetic app",
+    "samples": [
+      {
+        "pssKiB": 59049,
+        "rssKiB": 187452
+      },
+      {
+        "pssKiB": 59233,
+        "rssKiB": 187940
+      },
+      {
+        "pssKiB": 59233,
+        "rssKiB": 187940
+      }
+    ],
+    "medianPssMiB": 57.8447265625,
+    "medianRssMiB": 183.53515625
+  },
+  "apkBytes": {
+    "debug": 35891771,
+    "release": 23391399
+  }
+}

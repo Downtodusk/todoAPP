@@ -1,0 +1,36 @@
+{
+  "environment": "API 36 x86_64 SwiftShader emulator, isolated ADB 15038",
+  "sourceBaseCommit": "cbf0dd988489a9477e98754cbb3849b89cfd6f18",
+  "sourceWorkingTree": [
+    " M README.md",
+    " M app/build.gradle.kts",
+    " M app/src/main/java/com/example/todo/ui/components/GmailDetailFrame.kt",
+    " M app/src/main/java/com/example/todo/ui/components/TaskReturnMotion.kt",
+    " M app/src/main/java/com/example/todo/ui/theme/Motion.kt",
+    " M app/src/test/java/com/example/todo/ui/TaskReturnPhasesTest.kt",
+    " M baselineprofile/src/main/java/com/example/todo/baselineprofile/TodoJourney.kt",
+    " M docs/decisions.md",
+    " M docs/release-and-diagnostics.md",
+    " M scripts/device-performance.sh",
+    " M scripts/package-apks.sh",
+    " M todo-app-spec.md",
+    "?? docs/performance-0.4.4.md"
+  ],
+  "profileApkSha256": "a6e9ec6394fe1757ac4d37fd958470c74b3f42afa22bf8824a037fefd2792ead",
+  "deviceBuild": "Android/sdk_phone64_x86_64/emu64x:16/BE2A.250530.026.D1/13818094:userdebug/test-keys",
+  "collectionLog": "collection.log",
+  "profiles": {
+    "startup-prof.txt": {
+      "sha256": "45975caafa6b9bf835d1045688ce65972d345eb9b842512ac5660165e80f0d08",
+      "rules": 19335,
+      "appRules": 1026,
+      "bytes": 2006196
+    },
+    "baseline-prof.txt": {
+      "sha256": "6659f5dfae0691f00aef39f132470f3063128b8a4feac37f638d40b4dcd592c6",
+      "rules": 24666,
+      "appRules": 1583,
+      "bytes": 2722391
+    }
+  }
+}
